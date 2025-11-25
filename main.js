@@ -35,6 +35,7 @@ module.exports.loop = function () {
         const room = Game.rooms[roomName];
         roadsManager.run(room);
         extensionsManager.run(room);
+        towersManager.plan(room);
         towersManager.run(room);
     }
     
