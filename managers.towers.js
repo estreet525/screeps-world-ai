@@ -153,6 +153,109 @@ function plan(room) {
     }
 }
 
+// ---------- Safe mode / threat evaluation ----------
+
+function evaluateThreatLevel(room, hostiles) {
+    if (!hostiles || !hostiles.length) return 0;
+
+    const spawn = room.find(FIND_MY_STRUCTURES, {
+        filter: s => s.structureType === STRUCTURE_SPAWN
+    })[0];
+    const controller = room.controller;
+
+    let totalAttackParts = 0;
+    let totalHealParts = 0;
+    let closestToCore = 999;
+
+    for (const creep of hostiles) {
+        const body = creep.body || [];
+        for (const part of body) {
+            if (part.type === ATTACK || part.type === RANGED_ATTACK) totalAttackParts++;
+            if (part.type === HEAL) totalHealParts++;
+        }
+
+        if (spawn) {
+            closestToCore = Math.min(closestToCore, creep.pos.getRangeTo(spawn));
+        }
+        if (controller) {
+            closestToCore = Math.min(closestToCore, creep.pos.getRangeTo(controller));
+        }
+    }
+
+    // Very crude threat score heuristic
+    // Big creeps with lots of ATTACK/HEAL that are close to spawn/controller = bad
+    const score = totalAttackParts * 3 + totalHealParts * 4 + Math.max(0, 10 - closestToCore) * 2;
+
+    return score;
+}
+
+function maybeActivateSafeMode(room, hostiles, towers) {
+    const controller = room.controller;
+    if (!controller || !controller.my) return;
+    if (controller.safeMode || controller.safeModeCooldown) return;
+    if (!controller.safeModeAvailable || controller.safeModeAvailable <= 0) return;
+
+    if (!hostiles || !hostiles.length) return;
+
+    const threatScore = evaluateThreatLevel(room, hostiles);
+
+    // Check if we have any "real" defenders (anything with ATTACK/RANGED/HEAL)
+    const defenders = room.find(FIND_MY_CREEPS, {
+        filter: c => c.body.some(p =>
+            p.type === ATTACK || p.type === RANGED_ATTACK || p.type === HEAL
+        )
+    });
+
+    // Tower energy situation
+    let towerEnergyPct = 0;
+    if (towers && towers.length) {
+        const sample = towers[0];
+        const energy = sample.store
+            ? sample.store.getUsedCapacity(RESOURCE_ENERGY)
+            : sample.energy;
+        const capacity = sample.store
+            ? sample.store.getCapacity(RESOURCE_ENERGY)
+            : sample.energyCapacity;
+        towerEnergyPct = capacity > 0 ? energy / capacity : 0;
+    }
+
+    // Controller downgrade risk
+    const controllerDanger =
+        controller.ticksToDowngrade &&
+        controller.ticksToDowngrade < 5000; // pretty low, but not critical
+
+    // Heuristics:
+    // - threatScore high (big angry boy)
+    // - AND no defenders OR tower low on energy
+    // - AND hostile is close-ish to core
+    if (threatScore >= 40 && (defenders.length === 0 || towerEnergyPct < 0.3)) {
+        const actResult = controller.activateSafeMode();
+        if (actResult === OK) {
+            console.log(
+                `[DEFENSE] Auto Safe Mode activated in ${room.name}. ` +
+                `threatScore=${threatScore}, defenders=${defenders.length}, towerEnergy=${(towerEnergyPct * 100).toFixed(0)}%`
+            );
+        } else {
+            console.log(
+                `[DEFENSE] Failed to auto-activate Safe Mode in ${room.name}: ${actResult}`
+            );
+        }
+        return;
+    }
+
+    // Optional: if controller close to downgrade AND under moderate threat, also pop it
+    if (controllerDanger && threatScore >= 20) {
+        const actResult = controller.activateSafeMode();
+        if (actResult === OK) {
+            console.log(
+                `[DEFENSE] Auto Safe Mode (controller danger) in ${room.name}. ` +
+                `threatScore=${threatScore}, ticksToDowngrade=${controller.ticksToDowngrade}`
+            );
+        }
+    }
+}
+
+
 // ---------- Tower brain ----------
 
 function run(room) {
@@ -181,6 +284,10 @@ function run(room) {
                 tower.attack(target);
             }
         }
+        
+        // After we've tried shooting, decide if this situation is bad enough
+        // to warrant Safe Mode.
+        maybeActivateSafeMode(room, hostiles, towers);
         return;
     }
 
