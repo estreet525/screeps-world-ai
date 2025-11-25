@@ -6,6 +6,7 @@ const minerRole      = require('roles.miner');
 const haulerRole     = require('roles.hauler');
 const roadsManager   = require('managers.roads');
 const extensionsManager = require('managers.extensions');
+const towersManager = require('managers.towers');
 const pixelManager      = require('managers.pixel');
 
 const roleMap = {
@@ -34,6 +35,7 @@ module.exports.loop = function () {
         const room = Game.rooms[roomName];
         roadsManager.run(room);
         extensionsManager.run(room);
+        towersManager.run(room);
     }
     
     // Pixels from spare CPU
