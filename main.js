@@ -51,7 +51,6 @@ module.exports.loop = function () {
         towersManager.run(room);
 
         // Then ramparts
-        rampartsManager.plan(room);
         rampartsManager.run(room);
     }
     
