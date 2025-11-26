@@ -19,7 +19,7 @@ function run(room) {
 
     // Keep overall construction sites under control
     const totalSites = room.find(FIND_CONSTRUCTION_SITES).length;
-    if (totalSites > 15) {
+    if (totalSites > 20) {
         return;
     }
 
@@ -71,6 +71,7 @@ function run(room) {
         break;
     }
 
+    // If we placed a core rampart this tick, don't also do perimeter
     if (placed) return;
 
     // ---------- Perimeter (entrance) ramparts ----------
@@ -86,46 +87,66 @@ function run(room) {
     const terrain = room.getTerrain();
     const exits = room.find(FIND_EXIT);
 
+    // For each exit, we’ll try a couple of tiles a bit *inside* the room,
+    // not just a single fixed spot like (15,1).
     for (const exit of exits) {
-        let x = exit.x;
-        let y = exit.y;
+        const candidates = [];
 
-        // Move one tile inward so we're not on the border (0/49)
-        if (exit.x === 0) x = 1;
-        else if (exit.x === 49) x = 48;
-        else if (exit.y === 0) y = 1;
-        else if (exit.y === 49) y = 48;
-
-        // Skip if wall
-        if (terrain.get(x, y) === TERRAIN_MASK_WALL) continue;
-
-        const structs = room.lookForAt(LOOK_STRUCTURES, x, y);
-        if (structs.some(s => s.structureType === STRUCTURE_RAMPART)) continue;
-
-        const sites = room.lookForAt(LOOK_CONSTRUCTION_SITES, x, y);
-        // If *any* construction site already exists here, skip (road, etc.)
-        if (sites.length > 0) continue;
-
-        const result = room.createConstructionSite(x, y, STRUCTURE_RAMPART);
-
-        if (result === OK) {
-            console.log(
-                `[RAMPARTS] Placed perimeter rampart in ${room.name} at (${x},${y})`
-            );
-            // ✅ Success: stop for this tick
-            break;
+        if (exit.x === 0) {
+            // Left edge → test (1,y), (2,y)
+            candidates.push({ x: 1, y: exit.y }, { x: 2, y: exit.y });
+        } else if (exit.x === 49) {
+            // Right edge → test (48,y), (47,y)
+            candidates.push({ x: 48, y: exit.y }, { x: 47, y: exit.y });
+        } else if (exit.y === 0) {
+            // Top edge → test (x,1), (x,2)
+            candidates.push({ x: exit.x, y: 1 }, { x: exit.x, y: 2 });
+        } else if (exit.y === 49) {
+            // Bottom edge → test (x,48), (x,47)
+            candidates.push({ x: exit.x, y: 48 }, { x: exit.x, y: 47 });
         }
 
-        // If we're out of slots or RCL isn’t enough, log & stop trying this tick
-        if (result === ERR_FULL || result === ERR_RCL_NOT_ENOUGH) {
-            console.log(
-                `[RAMPARTS] Could not place perimeter rampart in ${room.name} at (${x},${y}): ${result}`
-            );
-            break;
+        for (const pos of candidates) {
+            const x = pos.x;
+            const y = pos.y;
+
+            // Bounds check, just in case
+            if (x <= 0 || x >= 49 || y <= 0 || y >= 49) continue;
+
+            // Skip terrain walls
+            if (terrain.get(x, y) === TERRAIN_MASK_WALL) continue;
+
+            const structs = room.lookForAt(LOOK_STRUCTURES, x, y);
+            // If we already have a rampart, skip
+            if (structs.some(s => s.structureType === STRUCTURE_RAMPART)) continue;
+
+            const sites = room.lookForAt(LOOK_CONSTRUCTION_SITES, x, y);
+            // Skip if *any* construction site is already here (road, whatever)
+            if (sites.length > 0) continue;
+
+            const result = room.createConstructionSite(x, y, STRUCTURE_RAMPART);
+
+            if (result === OK) {
+                console.log(
+                    `[RAMPARTS] Placed perimeter rampart in ${room.name} at (${x},${y})`
+                );
+                // ✅ Success: stop after placing ONE perimeter tile this tick
+                return;
+            }
+
+            // Out of slots / RCL too low → don't hammer more this tick
+            if (result === ERR_FULL || result === ERR_RCL_NOT_ENOUGH) {
+                console.log(
+                    `[RAMPARTS] Could not place perimeter rampart in ${room.name} at (${x},${y}): ${result}`
+                );
+                return;
+            }
+
+            // For ERR_INVALID_TARGET or other non-fatal stuff:
+            // just try the next candidate or next exit without logging spam.
         }
 
-        // For ERR_INVALID_TARGET or other weird cases, just silently move on
-        // to the next exit instead of spamming logs on the same tile.
+        // If none of this exit's candidates worked, we move on to the next exit.
     }
 }
 
