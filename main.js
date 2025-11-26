@@ -4,6 +4,7 @@ const upgraderRole   = require('roles.upgrader');
 const builderRole    = require('roles.builder');
 const minerRole      = require('roles.miner');
 const haulerRole     = require('roles.hauler');
+const roleRepairer   = require('roles.repairer');
 const containersManager = require('managers.containers');
 const roadsManager   = require('managers.roads');
 const extensionsManager = require('managers.extensions');
@@ -16,7 +17,8 @@ const roleMap = {
     upgrader: upgraderRole,
     builder: builderRole,
     miner: minerRole,
-    hauler: haulerRole
+    hauler: haulerRole,
+    repairer: roleRepairer
 };
 
 module.exports.loop = function () {

@@ -56,7 +56,18 @@ var BODY_OPTIONS = {
         [WORK, WORK, CARRY, CARRY, MOVE, MOVE],              // 400
         [WORK, CARRY, CARRY, MOVE],                          // 250
         [WORK, CARRY, MOVE]                                  // 200
+    ],
+
+    repairer: [
+        // Big builder
+        [WORK, WORK, WORK, CARRY, CARRY, MOVE, MOVE, MOVE],  // 550
+        // Medium
+        [WORK, WORK, CARRY, CARRY, MOVE, MOVE],              // 400
+        // Small
+        [WORK, CARRY, CARRY, MOVE]                           // 250
     ]
+
+    
 };
 
 // Choose the best body for a role given the room's energy capacity
@@ -87,7 +98,8 @@ module.exports = {
         miner: 2,
         hauler: 2,
         upgrader: 2,
-        builder: 2
+        builder: 2,
+        repairer: 1
     },
 
     bodyCost: bodyCost,
