@@ -7,9 +7,7 @@ function run(room) {
     // Don't bother before RCL3
     if (controller.level < 3) return;
 
-    // 🔒 Priority gating:
-    // Skip ramparts while higher-priority ECO structures are still being built.
-    // (Allow roads to be in progress; we care more about defense now.)
+    // Skip while containers/extensions are still under construction
     const blockingSites = room.find(FIND_CONSTRUCTION_SITES, {
         filter: s =>
             s.structureType === STRUCTURE_CONTAINER ||
@@ -29,17 +27,14 @@ function run(room) {
 
     const important = [];
 
-    // Spawns
     const spawns = room.find(FIND_MY_SPAWNS);
     for (const s of spawns) important.push(s);
 
-    // Towers
     const towers = room.find(FIND_MY_STRUCTURES, {
         filter: s => s.structureType === STRUCTURE_TOWER
     });
     for (const t of towers) important.push(t);
 
-    // Storage (if/when you have one)
     const storages = room.find(FIND_MY_STRUCTURES, {
         filter: s => s.structureType === STRUCTURE_STORAGE
     });
@@ -47,12 +42,10 @@ function run(room) {
 
     let placed = false;
 
-    // Try to place at most ONE core rampart site per tick
     for (const obj of important) {
         const x = obj.pos.x;
         const y = obj.pos.y;
 
-        // Check for existing rampart or rampart site on this tile
         const structs = room.lookForAt(LOOK_STRUCTURES, x, y);
         if (structs.some(s => s.structureType === STRUCTURE_RAMPART)) {
             continue;
@@ -78,12 +71,10 @@ function run(room) {
         break;
     }
 
-    // If we placed a core rampart this tick, don't also do perimeter
     if (placed) return;
 
     // ---------- Perimeter (entrance) ramparts ----------
 
-    // Light cap so we don't build a full 200-tile shield early on
     const ramparts = room.find(FIND_STRUCTURES, {
         filter: s => s.structureType === STRUCTURE_RAMPART
     });
@@ -93,9 +84,8 @@ function run(room) {
     }
 
     const terrain = room.getTerrain();
-
-    // All exits on the room edge
     const exits = room.find(FIND_EXIT);
+
     for (const exit of exits) {
         let x = exit.x;
         let y = exit.y;
@@ -110,29 +100,35 @@ function run(room) {
         if (terrain.get(x, y) === TERRAIN_MASK_WALL) continue;
 
         const structs = room.lookForAt(LOOK_STRUCTURES, x, y);
-        const sites = room.lookForAt(LOOK_CONSTRUCTION_SITES, x, y);
-
-        // If we already have a rampart or rampart site here, skip
         if (structs.some(s => s.structureType === STRUCTURE_RAMPART)) continue;
-        if (sites.some(s => s.structureType === STRUCTURE_RAMPART)) continue;
+
+        const sites = room.lookForAt(LOOK_CONSTRUCTION_SITES, x, y);
+        // If *any* construction site already exists here, skip (road, etc.)
+        if (sites.length > 0) continue;
 
         const result = room.createConstructionSite(x, y, STRUCTURE_RAMPART);
+
         if (result === OK) {
             console.log(
                 `[RAMPARTS] Placed perimeter rampart in ${room.name} at (${x},${y})`
             );
-        } else if (result !== ERR_FULL && result !== ERR_RCL_NOT_ENOUGH) {
-            console.log(
-                `[RAMPARTS] Failed to place perimeter rampart in ${room.name} at (${x},${y}): ${result}`
-            );
+            // ✅ Success: stop for this tick
+            break;
         }
 
-        // Only one perimeter tile per tick
-        break;
+        // If we're out of slots or RCL isn’t enough, log & stop trying this tick
+        if (result === ERR_FULL || result === ERR_RCL_NOT_ENOUGH) {
+            console.log(
+                `[RAMPARTS] Could not place perimeter rampart in ${room.name} at (${x},${y}): ${result}`
+            );
+            break;
+        }
+
+        // For ERR_INVALID_TARGET or other weird cases, just silently move on
+        // to the next exit instead of spamming logs on the same tile.
     }
 }
 
-// For consistency with other managers, plan() just delegates to run()
 function plan(room) {
     return run(room);
 }
