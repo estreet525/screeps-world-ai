@@ -275,6 +275,35 @@ function run(room) {
         : sample.energyCapacity;
     const energyPct = capacity > 0 ? energy / capacity : 0;
 
+    const controller = room.controller;
+
+    // 🔒 SAFE MODE BEHAVIOR:
+    // If we're in safe mode, DO NOT ATTACK.
+    // Only heal and repair so we don't waste tower energy on invincible creeps.
+    if (controller && controller.safeMode) {
+        // Heal first
+        const healTarget = chooseHealTarget(room);
+        if (healTarget) {
+            for (const tower of towers) {
+                tower.heal(healTarget);
+            }
+            return;
+        }
+
+        // Then repair if we have enough energy
+        if (energyPct >= 0.5) {
+            const repairTarget = chooseRepairTarget(room);
+            if (repairTarget) {
+                for (const tower of towers) {
+                    tower.repair(repairTarget);
+                }
+            }
+        }
+
+        // Do NOT do hostile logic in safe mode
+        return;
+    }
+
     // 1) Attack hostiles
     const hostiles = room.find(FIND_HOSTILE_CREEPS, { filter: isHostile });
     if (hostiles.length) {
