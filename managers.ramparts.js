@@ -25,7 +25,8 @@ function run(room) {
         return;
     }
 
-    // Collect important structures to protect
+    // ---------- Core structure protection ----------
+
     const important = [];
 
     // Spawns
@@ -38,17 +39,15 @@ function run(room) {
     });
     for (const t of towers) important.push(t);
 
-    // NOTE: we are *not* adding the controller itself here for now,
-    // because room.createConstructionSite on that tile returns ERR_INVALID_TARGET
-    // in this setup and just spams failures.
-
     // Storage (if/when you have one)
     const storages = room.find(FIND_MY_STRUCTURES, {
         filter: s => s.structureType === STRUCTURE_STORAGE
     });
     for (const st of storages) important.push(st);
 
-    // Try to place at most ONE new rampart site per tick
+    let placed = false;
+
+    // Try to place at most ONE core rampart site per tick
     for (const obj of important) {
         const x = obj.pos.x;
         const y = obj.pos.y;
@@ -67,15 +66,68 @@ function run(room) {
         const result = room.createConstructionSite(x, y, STRUCTURE_RAMPART);
         if (result === OK) {
             console.log(
-                `[RAMPARTS] Placed rampart site over ${obj.structureType || 'object'} in ${room.name} at (${x},${y})`
+                `[RAMPARTS] Placed core rampart over ${obj.structureType || 'object'} in ${room.name} at (${x},${y})`
             );
         } else if (result !== ERR_FULL && result !== ERR_RCL_NOT_ENOUGH) {
             console.log(
-                `[RAMPARTS] Failed to place rampart in ${room.name} at (${x},${y}): ${result}`
+                `[RAMPARTS] Failed to place core rampart in ${room.name} at (${x},${y}): ${result}`
             );
         }
 
-        // Only try one tile per tick
+        placed = true;
+        break;
+    }
+
+    // If we placed a core rampart this tick, don't also do perimeter
+    if (placed) return;
+
+    // ---------- Perimeter (entrance) ramparts ----------
+
+    // Light cap so we don't build a full 200-tile shield early on
+    const ramparts = room.find(FIND_STRUCTURES, {
+        filter: s => s.structureType === STRUCTURE_RAMPART
+    });
+    const MAX_PERIMETER_RAMPARTS = 40;
+    if (ramparts.length >= MAX_PERIMETER_RAMPARTS) {
+        return;
+    }
+
+    const terrain = room.getTerrain();
+
+    // All exits on the room edge
+    const exits = room.find(FIND_EXIT);
+    for (const exit of exits) {
+        let x = exit.x;
+        let y = exit.y;
+
+        // Move one tile inward so we're not on the border (0/49)
+        if (exit.x === 0) x = 1;
+        else if (exit.x === 49) x = 48;
+        else if (exit.y === 0) y = 1;
+        else if (exit.y === 49) y = 48;
+
+        // Skip if wall
+        if (terrain.get(x, y) === TERRAIN_MASK_WALL) continue;
+
+        const structs = room.lookForAt(LOOK_STRUCTURES, x, y);
+        const sites = room.lookForAt(LOOK_CONSTRUCTION_SITES, x, y);
+
+        // If we already have a rampart or rampart site here, skip
+        if (structs.some(s => s.structureType === STRUCTURE_RAMPART)) continue;
+        if (sites.some(s => s.structureType === STRUCTURE_RAMPART)) continue;
+
+        const result = room.createConstructionSite(x, y, STRUCTURE_RAMPART);
+        if (result === OK) {
+            console.log(
+                `[RAMPARTS] Placed perimeter rampart in ${room.name} at (${x},${y})`
+            );
+        } else if (result !== ERR_FULL && result !== ERR_RCL_NOT_ENOUGH) {
+            console.log(
+                `[RAMPARTS] Failed to place perimeter rampart in ${room.name} at (${x},${y}): ${result}`
+            );
+        }
+
+        // Only one perimeter tile per tick
         break;
     }
 }
