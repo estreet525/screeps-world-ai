@@ -8,6 +8,7 @@ const containersManager = require('managers.containers');
 const roadsManager   = require('managers.roads');
 const extensionsManager = require('managers.extensions');
 const towersManager = require('managers.towers');
+const rampartsManager = require('managers.ramparts');
 const pixelManager      = require('managers.pixel');
 
 const roleMap = {
@@ -48,6 +49,10 @@ module.exports.loop = function () {
         // Then towers
         towersManager.plan(room);
         towersManager.run(room);
+
+        // Then ramparts
+        containersManager.plan(room);
+        containersManager.run(room);
     }
     
     // Pixels from spare CPU
