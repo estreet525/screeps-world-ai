@@ -15,6 +15,10 @@ module.exports = {
             filter: s => s.structureType === STRUCTURE_CONTAINER
         });
 
+        // Originally the miner placed the container constructions sites. 
+        // Saving in comments in case recall is needed
+
+        /*
         // 3. Auto-place container construction site if needed
         if (containers.length === 0 && containerSites.length === 0) {
             const terrain = source.room.getTerrain();
@@ -47,6 +51,7 @@ module.exports = {
                 }
             }
         }
+            */
 
         // 4. Prefer standing on the container
         if (containers.length > 0) {
