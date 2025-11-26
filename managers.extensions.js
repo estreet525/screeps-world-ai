@@ -25,6 +25,17 @@ module.exports = {
             return;
         }
 
+        // 🔒 NEW: don't plan extensions while containers are still being built
+        const pendingContainers = room.find(FIND_CONSTRUCTION_SITES, {
+            filter: function (s) {
+                return s.structureType === STRUCTURE_CONTAINER;
+            }
+        });
+        if (pendingContainers.length > 0) {
+            // Let containers finish first
+            return;
+        }
+
         // Throttle: only run every 100 ticks (offset a bit)
         if (Game.time % 100 !== 5) {
             return;

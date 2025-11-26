@@ -3,6 +3,16 @@ module.exports = {
         // Only plan roads in your own rooms
         if (!room.controller || !room.controller.my) return;
 
+        // 🔒 NEW: Don't plan roads while containers or extensions are still being built
+        const blockingSites = room.find(FIND_CONSTRUCTION_SITES, {
+            filter: s =>
+                s.structureType === STRUCTURE_CONTAINER ||
+                s.structureType === STRUCTURE_EXTENSION
+        });
+        if (blockingSites.length > 0) {
+            return;
+        }
+
         // Throttle: only run every 100 ticks
         if (Game.time % 100 !== 0) return;
 
