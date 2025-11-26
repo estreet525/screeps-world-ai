@@ -51,8 +51,8 @@ module.exports.loop = function () {
         towersManager.run(room);
 
         // Then ramparts
-        containersManager.plan(room);
-        containersManager.run(room);
+        rampartsManager.plan(room);
+        rampartsManager.run(room);
     }
     
     // Pixels from spare CPU
