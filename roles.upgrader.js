@@ -25,7 +25,19 @@ module.exports = {
         // ENERGY COLLECTION MODE
         // =====================
 
-        // 1) WITHDRAW FROM CONTAINERS / STORAGE
+        // 1) First get from storage
+        const storage = creep.room.storage;
+        if (
+            storage &&
+            storage.store.getUsedCapacity(RESOURCE_ENERGY) > 500  // small buffer
+        ) {
+            if (creep.withdraw(storage, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
+            creep.moveTo(storage, { visualizePathStyle: { stroke: '#ffffff' } });
+    }
+    return; // don’t fall through to other get-energy logic this tick
+}
+
+        // 2) WITHDRAW FROM CONTAINERS / STORAGE
         var container = creep.pos.findClosestByPath(FIND_STRUCTURES, {
             filter: function (s) {
                 return (
@@ -43,7 +55,7 @@ module.exports = {
             return;
         }
 
-        // 2) LAST RESORT: HARVEST FROM SOURCE
+        // 3) LAST RESORT: HARVEST FROM SOURCE
         var source = creep.pos.findClosestByPath(FIND_SOURCES);
         if (source) {
             if (creep.harvest(source) === ERR_NOT_IN_RANGE) {
