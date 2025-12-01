@@ -38,6 +38,10 @@ var BODY_OPTIONS = {
     ],
 
     upgrader: [
+        // Bigger upgrader
+        [WORK, WORK, WORK, WORK, WORK, WORK, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY,
+         MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE
+        ],                                                   // 1300
         // Big upgrader
         [WORK, WORK, WORK, CARRY, CARRY, MOVE, MOVE, MOVE],  // 550
         // Medium
