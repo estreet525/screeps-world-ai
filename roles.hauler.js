@@ -109,7 +109,7 @@ module.exports = {
     //  Optional: if nowhere to put energy, idle near storage or controller
     // const idlePos = storage?.pos || creep.room.controller?.pos;
     // if (idlePos) creep.moveTo(idlePos);
-}
+
 
         // 5) If all energy sinks are full, BUILD construction sites
         if (!target) {
