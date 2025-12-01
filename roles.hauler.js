@@ -159,7 +159,7 @@ module.exports = {
         if (creep.transfer(target, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
             creep.moveTo(target, { visualizePathStyle: { stroke: '#ffffff' } });
         }
-}
+
 
 
 // Helper function outside module.exports
@@ -199,5 +199,9 @@ function getControllerContainer(room) {
     });
 
     return containers[0] || null;
+    }   
+
+
+    }
 }
 
