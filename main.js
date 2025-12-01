@@ -8,6 +8,7 @@ const roleRepairer   = require('roles.repairer');
 const containersManager = require('managers.containers');
 const roadsManager   = require('managers.roads');
 const extensionsManager = require('managers.extensions');
+const storageManager = require('managers.storage');
 const towersManager = require('managers.towers');
 const rampartsManager = require('managers.ramparts');
 const pixelManager      = require('managers.pixel');
@@ -54,6 +55,9 @@ module.exports.loop = function () {
 
         // Then ramparts
         rampartsManager.run(room);
+
+        // Storage once we hit RCL4
+        storageManager.run(room);
     }
     
     // Pixels from spare CPU
