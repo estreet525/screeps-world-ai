@@ -125,19 +125,13 @@ module.exports = {
                 return;
             }
 
-            // 2) NEXT: towers
+            // 2) NEXT: towers (only if they're actually low)
             target = creep.pos.findClosestByPath(FIND_STRUCTURES, {
                 filter: s =>
                     s.structureType === STRUCTURE_TOWER &&
-                    s.store.getFreeCapacity(RESOURCE_ENERGY) > 0
+                    s.store[RESOURCE_ENERGY] < 500   // tweak threshold as you like
             });
 
-            if (target) {
-                if (creep.transfer(target, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
-                    creep.moveTo(target);
-                }
-                return;
-            }
 
             // 3) NEXT: controller container (if it exists and has room)
             const ctrlContainer = getControllerContainer(creep.room);
