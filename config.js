@@ -17,7 +17,7 @@ var DEFAULT_BODY = [WORK, CARRY, MOVE];
 var BODY_OPTIONS = {
     miner: [
         // Bigger Miner
-        [WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, MOVE, MOVE, MOVE], // cost 1300
+        [ WORK, WORK, WORK, WORK, WORK, MOVE, MOVE, MOVE], // cost 1000
         // RCL3+ / higher capacity: strong miner
         [WORK, WORK, WORK, WORK, WORK, MOVE, MOVE, MOVE],   // cost 650
         // RCL2 full extensions: solid miner
@@ -29,8 +29,8 @@ var BODY_OPTIONS = {
     hauler: [
         // Bigger Hauler
         [CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY,
-         MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE   
-        ],                                                                        // 1300
+         MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE   
+        ],                                                                        // 100
         // Big hauler
         [WORK, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE], // 600
         // Mid hauler
@@ -42,8 +42,8 @@ var BODY_OPTIONS = {
     upgrader: [
         // Bigger upgrader
         [WORK, WORK, WORK, WORK, WORK, WORK, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY,
-         MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE
-        ],                                                   // 1300
+         MOVE
+        ],                                                   // 1000
         // Big upgrader
         [WORK, WORK, WORK, CARRY, CARRY, MOVE, MOVE, MOVE],  // 550
         // Medium
