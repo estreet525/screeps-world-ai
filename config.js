@@ -16,6 +16,8 @@ var DEFAULT_BODY = [WORK, CARRY, MOVE];
 // We'll pick the biggest one we can afford based on room.energyCapacityAvailable
 var BODY_OPTIONS = {
     miner: [
+        // Bigger Miner
+        [WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, MOVE, MOVE, MOVE], // cost 1300
         // RCL3+ / higher capacity: strong miner
         [WORK, WORK, WORK, WORK, WORK, MOVE, MOVE, MOVE],   // cost 650
         // RCL2 full extensions: solid miner
