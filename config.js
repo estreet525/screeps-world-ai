@@ -41,7 +41,7 @@ var BODY_OPTIONS = {
 
     upgrader: [
         // Bigger upgrader
-        [WORK, WORK, WORK, WORK, WORK, WORK, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY,
+        [WORK, WORK, WORK, WORK, WORK, WORK, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE,
          MOVE
         ],                                                   // 1000
         // Big upgrader
@@ -106,9 +106,9 @@ module.exports = {
     creepCounts: {
         harvester: 0,   // only emergency via the spawn logic
         miner: 2,
-        hauler: 1, // changed to 1 when running low on energy
+        hauler: 2, // changed to 1 when running low on energy
         upgrader: 1,
-        builder: 1,
+        builder: 2,
         repairer: 1
     },
 
