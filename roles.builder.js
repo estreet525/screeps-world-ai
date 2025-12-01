@@ -1,6 +1,13 @@
 module.exports = {
     run: function (creep) {
 
+        // === BORDER ESCAPE: don't sit on room edges or in other rooms ===
+        // If the creep is on an exit tile, nudge it toward the center
+        if (creep.pos.x === 0 || creep.pos.x === 49 || creep.pos.y === 0 || creep.pos.y === 49) {
+            creep.moveTo(25, 25, { maxRooms: 1 });
+            return;
+        }
+
         // === STATE MACHINE ===
         if (creep.memory.building && creep.store[RESOURCE_ENERGY] === 0) {
             creep.memory.building = false;
@@ -61,14 +68,14 @@ module.exports = {
                 const site = creep.pos.findClosestByPath(FIND_CONSTRUCTION_SITES);
                 if (site) {
                     if (creep.build(site) === ERR_NOT_IN_RANGE) {
-                        creep.moveTo(site, { visualizePathStyle: { stroke: '#ffffff' } });
+                        creep.moveTo(site, { visualizePathStyle: { stroke: '#ffffff' }, maxRooms: 1 });
                     }
                     return;
                 }
 
                 // No site (edge case) -> upgrade
                 if (creep.upgradeController(room.controller) === ERR_NOT_IN_RANGE) {
-                    creep.moveTo(room.controller, { visualizePathStyle: { stroke: '#ffffff' } });
+                    creep.moveTo(room.controller, { visualizePathStyle: { stroke: '#ffffff' }, maxRooms: 1 });
                 }
                 return;
             }
@@ -79,7 +86,7 @@ module.exports = {
                 // Storage has room -> act as HAULER:
                 // deliver energy we are carrying to STORAGE
                 if (creep.transfer(storage, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
-                    creep.moveTo(storage, { visualizePathStyle: { stroke: '#ffffff' } });
+                    creep.moveTo(storage, { visualizePathStyle: { stroke: '#ffffff' }, maxRooms: 1 });
                 }
                 return;
             }
@@ -87,7 +94,7 @@ module.exports = {
             // Storage is full or missing -> act as HELPER UPGRADER
             if (room.controller) {
                 if (creep.upgradeController(room.controller) === ERR_NOT_IN_RANGE) {
-                    creep.moveTo(room.controller, { visualizePathStyle: { stroke: '#ffffff' } });
+                    creep.moveTo(room.controller, { visualizePathStyle: { stroke: '#ffffff' }, maxRooms: 1 });
                 }
             }
             return;
@@ -108,7 +115,7 @@ module.exports = {
 
             if (container) {
                 if (creep.withdraw(container, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
-                    creep.moveTo(container, { visualizePathStyle: { stroke: '#ffaa00' } });
+                    creep.moveTo(container, { visualizePathStyle: { stroke: '#ffaa00' }, maxRooms: 1 });
                 }
                 return;
             }
@@ -134,7 +141,7 @@ module.exports = {
 
             if (dropped) {
                 if (creep.pickup(dropped) === ERR_NOT_IN_RANGE) {
-                    creep.moveTo(dropped, { visualizePathStyle: { stroke: '#ffaa00' } });
+                    creep.moveTo(dropped, { visualizePathStyle: { stroke: '#ffaa00' }, maxRooms: 1 });
                 }
                 return;
             }
@@ -146,7 +153,7 @@ module.exports = {
 
             if (sourceContainer) {
                 if (creep.withdraw(sourceContainer, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
-                    creep.moveTo(sourceContainer, { visualizePathStyle: { stroke: '#ffaa00' } });
+                    creep.moveTo(sourceContainer, { visualizePathStyle: { stroke: '#ffaa00' }, maxRooms: 1 });
                 }
                 return;
             }
@@ -155,7 +162,7 @@ module.exports = {
             const source = creep.pos.findClosestByPath(FIND_SOURCES);
             if (source) {
                 if (creep.harvest(source) === ERR_NOT_IN_RANGE) {
-                    creep.moveTo(source, { visualizePathStyle: { stroke: '#ffaa00' } });
+                    creep.moveTo(source, { visualizePathStyle: { stroke: '#ffaa00' }, maxRooms: 1 });
                 }
             }
             return;
@@ -166,7 +173,7 @@ module.exports = {
 
         if (controllerContainer && controllerContainer.store[RESOURCE_ENERGY] > 0) {
             if (creep.withdraw(controllerContainer, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
-                creep.moveTo(controllerContainer, { visualizePathStyle: { stroke: '#ffaa00' } });
+                creep.moveTo(controllerContainer, { visualizePathStyle: { stroke: '#ffaa00' }, maxRooms: 1 });
             }
             return;
         }
@@ -182,7 +189,7 @@ module.exports = {
 
         if (otherContainer) {
             if (creep.withdraw(otherContainer, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
-                creep.moveTo(otherContainer, { visualizePathStyle: { stroke: '#ffaa00' } });
+                creep.moveTo(otherContainer, { visualizePathStyle: { stroke: '#ffaa00' }, maxRooms: 1 });
             }
             return;
         }
@@ -191,7 +198,7 @@ module.exports = {
         const source = creep.pos.findClosestByPath(FIND_SOURCES);
         if (source) {
             if (creep.harvest(source) === ERR_NOT_IN_RANGE) {
-                creep.moveTo(source, { visualizePathStyle: { stroke: '#ffaa00' } });
+                creep.moveTo(source, { visualizePathStyle: { stroke: '#ffaa00' }, maxRooms: 1 });
             }
         }
     }
