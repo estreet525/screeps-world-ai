@@ -25,12 +25,16 @@ var BODY_OPTIONS = {
     ],
 
     hauler: [
+        // Bigger Hauler
+        [CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY,
+         MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE   
+        ]                                                                        // 1300
         // Big hauler
-        [WORK, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE], // 500
+        [WORK, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE], // 600
         // Mid hauler
-        [WORK, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE],                           // 300
+        [WORK, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE],                           // 400
         // Small hauler
-        [WORK, CARRY, CARRY, MOVE, MOVE]                                         // 200
+        [WORK, CARRY, CARRY, MOVE, MOVE]                                         // 300
     ],
 
     upgrader: [
