@@ -85,6 +85,8 @@ function chooseRepairTarget(room) {
 
 // ---------- Placement logic ----------
 
+// ---------- Placement logic ----------
+
 function plan(room) {
     if (!room.controller || !room.controller.my) return;
 
@@ -101,6 +103,7 @@ function plan(room) {
         filter: s => s.structureType === STRUCTURE_TOWER
     }).length;
 
+    // Already have as many towers (built + sites) as allowed
     if (existing + sites >= allowed) return;
 
     const spawn = room.find(FIND_MY_STRUCTURES, {
@@ -108,8 +111,10 @@ function plan(room) {
     })[0];
     if (!spawn) return;
 
+    const terrain = room.getTerrain();
+
     // Preferred offsets around the spawn for towers.
-    // Adjust if you want a different core layout.
+    // These keep early layout nice and compact.
     const offsets = [
         { x: 1, y: -1 },
         { x: -1, y: -1 },
@@ -121,6 +126,9 @@ function plan(room) {
         { x: 0, y: -2 }
     ];
 
+    let placed = false;
+
+    // First try preferred offsets
     for (const { x, y } of offsets) {
         const pos = new RoomPosition(
             spawn.pos.x + x,
@@ -129,12 +137,12 @@ function plan(room) {
         );
 
         if (pos.x <= 0 || pos.x >= 49 || pos.y <= 0 || pos.y >= 49) continue;
+        if (terrain.get(pos.x, pos.y) === TERRAIN_MASK_WALL) continue;
 
-        const terrain = room.lookForAt(LOOK_TERRAIN, pos)[0];
-        if (terrain === 'wall') continue;
-
-        const hasStructures = room.lookForAt(LOOK_STRUCTURES, pos).length > 0;
-        const hasSites = room.lookForAt(LOOK_CONSTRUCTION_SITES, pos).length > 0;
+        const hasStructures =
+            room.lookForAt(LOOK_STRUCTURES, pos).length > 0;
+        const hasSites =
+            room.lookForAt(LOOK_CONSTRUCTION_SITES, pos).length > 0;
         if (hasStructures || hasSites) continue;
 
         const result = room.createConstructionSite(pos, STRUCTURE_TOWER);
@@ -147,11 +155,65 @@ function plan(room) {
                 `[TOWERS] Failed to place tower at ${room.name} (${pos.x},${pos.y}): ${result}`
             );
         }
+        placed = true;
+        break; // one position per tick
+    }
 
-        // Only try one position per tick so we don't spam
-        break;
+    if (placed) return;
+
+    // Fallback: search a wider ring around the spawn
+    // so we don't get stuck if core tiles are occupied.
+    const minRange = 2;
+    const maxRange = 6;
+
+    for (let range = minRange; range <= maxRange && !placed; range++) {
+        for (let dx = -range; dx <= range && !placed; dx++) {
+            for (let dy = -range; dy <= range && !placed; dy++) {
+                const x = spawn.pos.x + dx;
+                const y = spawn.pos.y + dy;
+
+                if (x <= 0 || x >= 49 || y <= 0 || y >= 49) continue;
+                if (terrain.get(x, y) === TERRAIN_MASK_WALL) continue;
+
+                const pos = new RoomPosition(x, y, room.name);
+
+                const hasStructures =
+                    room.lookForAt(LOOK_STRUCTURES, pos).length > 0;
+                const hasSites =
+                    room.lookForAt(LOOK_CONSTRUCTION_SITES, pos).length > 0;
+                if (hasStructures || hasSites) continue;
+
+                // Optional: avoid placing right on top of sources/controller/mineral
+                const things = pos.look();
+                const isWeirdSpot = things.some(
+                    t =>
+                        t.type === LOOK_SOURCE ||
+                        t.type === LOOK_MINERAL ||
+                        (t.type === LOOK_STRUCTURES &&
+                            t.structure.structureType ===
+                                STRUCTURE_CONTROLLER)
+                );
+                if (isWeirdSpot) continue;
+
+                const result = room.createConstructionSite(
+                    pos,
+                    STRUCTURE_TOWER
+                );
+                if (result === OK) {
+                    console.log(
+                        `[TOWERS] Fallback tower site at ${room.name} (${x},${y})`
+                    );
+                } else {
+                    console.log(
+                        `[TOWERS] Failed fallback tower at ${room.name} (${x},${y}): ${result}`
+                    );
+                }
+                placed = true;
+            }
+        }
     }
 }
+
 
 // ---------- Safe mode / threat evaluation ----------
 
