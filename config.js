@@ -107,8 +107,8 @@ module.exports = {
         harvester: 0,   // only emergency via the spawn logic
         miner: 2,
         hauler: 1, // changed to 1 when running low on energy
-        upgrader: 2,
-        builder: 2,
+        upgrader: 1,
+        builder: 1,
         repairer: 1
     },
 
