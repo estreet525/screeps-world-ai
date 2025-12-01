@@ -1,3 +1,16 @@
+function getControllerContainer(room) {
+    if (!room.controller) return null;
+
+    const containers = room.find(FIND_STRUCTURES, {
+        filter: s =>
+            s.structureType === STRUCTURE_CONTAINER &&
+            s.pos.inRangeTo(room.controller.pos, 2)
+    });
+
+    return containers[0] || null;
+}
+
+
 module.exports = {
     run: function (creep) {
 
@@ -25,7 +38,19 @@ module.exports = {
         // ENERGY COLLECTION MODE
         // =====================
 
-        // 1) First get from storage
+        // 1) Prefer controller container if it exists and has energy
+        const ctrlContainer = getControllerContainer(creep.room);
+
+        if (ctrlContainer &&
+            ctrlContainer.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+
+            if (creep.withdraw(ctrlContainer, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
+                creep.moveTo(ctrlContainer, { visualizePathStyle: { stroke: '#ffffff' } });
+            }
+            return;
+        }
+
+        // 2) First get from storage
         const storage = creep.room.storage;
         if (
             storage &&
@@ -37,7 +62,7 @@ module.exports = {
     return; // don’t fall through to other get-energy logic this tick
 }
 
-        // 2) WITHDRAW FROM CONTAINERS / STORAGE
+        // 3) WITHDRAW FROM CONTAINERS / STORAGE
         var container = creep.pos.findClosestByPath(FIND_STRUCTURES, {
             filter: function (s) {
                 return (
@@ -55,7 +80,7 @@ module.exports = {
             return;
         }
 
-        // 3) LAST RESORT: HARVEST FROM SOURCE
+        // 4) LAST RESORT: HARVEST FROM SOURCE
         var source = creep.pos.findClosestByPath(FIND_SOURCES);
         if (source) {
             if (creep.harvest(source) === ERR_NOT_IN_RANGE) {
