@@ -48,23 +48,7 @@ module.exports = {
         // ========= COLLECT MODE =========
         if (!creep.memory.hauling) {
 
-            // 1) PRIORITY: dropped energy
-            const dropped = creep.pos.findClosestByPath(FIND_DROPPED_RESOURCES, {
-                filter: r =>
-                    r.resourceType === RESOURCE_ENERGY &&
-                    r.amount >= 10
-            });
-
-            if (dropped) {
-                if (creep.pickup(dropped) === ERR_NOT_IN_RANGE) {
-                    creep.moveTo(dropped, {
-                        visualizePathStyle: { stroke: '#ffaa00' }
-                    });
-                }
-                return;
-            }
-
-            // 2) NEXT: containers with energy
+            // 1) NEXT: containers with energy
             //    IMPORTANT: avoid the controller container here,
             //    so we don't steal from the upgrader's feed.
             const controller = creep.room.controller;
@@ -78,6 +62,22 @@ module.exports = {
             if (container) {
                 if (creep.withdraw(container, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
                     creep.moveTo(container, {
+                        visualizePathStyle: { stroke: '#ffaa00' }
+                    });
+                }
+                return;
+            }
+
+            // 2) PRIORITY: dropped energy
+            const dropped = creep.pos.findClosestByPath(FIND_DROPPED_RESOURCES, {
+                filter: r =>
+                    r.resourceType === RESOURCE_ENERGY &&
+                    r.amount >= 10
+            });
+
+            if (dropped) {
+                if (creep.pickup(dropped) === ERR_NOT_IN_RANGE) {
+                    creep.moveTo(dropped, {
                         visualizePathStyle: { stroke: '#ffaa00' }
                     });
                 }

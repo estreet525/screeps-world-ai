@@ -106,7 +106,7 @@ module.exports = {
     creepCounts: {
         harvester: 0,   // only emergency via the spawn logic
         miner: 2,
-        hauler: 4, 
+        hauler: 4, // drop to two on new run
         upgrader: 1,
         builder: 2,
         repairer: 1
