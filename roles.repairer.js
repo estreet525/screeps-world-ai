@@ -3,6 +3,13 @@
 const roleRepairer = {
     run(creep) {
 
+        // === BORDER ESCAPE: don't sit on room edges or in other rooms ===
+        // If the creep is on an exit tile, nudge it toward the center
+        if (creep.pos.x === 0 || creep.pos.x === 49 || creep.pos.y === 0 || creep.pos.y === 49) {
+            creep.moveTo(25, 25, { maxRooms: 1 });
+            return;
+        }
+
         // State machine: harvesting vs repairing
         if (creep.memory.repairing && creep.store[RESOURCE_ENERGY] === 0) {
             creep.memory.repairing = false;
