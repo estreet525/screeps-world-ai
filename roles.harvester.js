@@ -1,6 +1,39 @@
 module.exports = {
     run: function (creep) {
-        // Toggle harvesting / delivering states
+        
+        module.exports = {
+    run: function (creep) {
+
+        const storage = creep.room.storage;
+
+        // =====================================================
+        // SPECIAL MODE: If Storage exists, this creep becomes a
+        // dedicated hauler from Storage → spawn/extensions/tower
+        // =====================================================
+        if (storage) {
+
+            // Toggle working states
+            if (creep.memory.working && creep.store[RESOURCE_ENERGY] === 0) {
+                creep.memory.working = false;
+            }
+            if (!creep.memory.working && creep.store.getFreeCapacity() === 0) {
+                creep.memory.working = true;
+            }
+
+            // NOT WORKING → Withdraw from Storage
+            if (!creep.memory.working) {
+                if (creep.withdraw(storage, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
+                    creep.moveTo(storage, { visualizePathStyle: { stroke: '#ffaa00' } });
+                }
+                return;
+            }
+
+        
+        
+        
+        
+        if(!storage){
+            // Toggle harvesting / delivering states
         if (creep.memory.harvesting && creep.store.getFreeCapacity() === 0) {
             creep.memory.harvesting = false; // now go deliver
         }
@@ -58,5 +91,3 @@ module.exports = {
         }
     }
 };
-``
-
