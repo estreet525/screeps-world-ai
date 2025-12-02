@@ -47,64 +47,44 @@ module.exports = {
 
         // ========= COLLECT MODE =========
         if (!creep.memory.hauling) {
+    // 1) Source containers (near miners)
+    const sourceContainers = creep.room.find(FIND_STRUCTURES, {
+        filter: s =>
+            s.structureType === STRUCTURE_CONTAINER &&
+            s.store[RESOURCE_ENERGY] > 0 &&
+            !s.pos.inRangeTo(creep.room.controller, 3) // crude way to avoid controller container
+    });
 
-            // 1) NEXT: containers with energy
-            //    IMPORTANT: avoid the controller container here,
-            //    so we don't steal from the upgrader's feed.
-            const controller = creep.room.controller;
-            const container = creep.pos.findClosestByPath(FIND_STRUCTURES, {
-                filter: s =>
-                    s.structureType === STRUCTURE_CONTAINER &&
-                    (!controller || !s.pos.inRangeTo(controller.pos, 2)) &&
-                    s.store[RESOURCE_ENERGY] > 0
-            });
+    let target = _.max(sourceContainers, 'store.energy'); // any selection logic you like
 
-            if (container) {
-                if (creep.withdraw(container, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
-                    creep.moveTo(container, {
-                        visualizePathStyle: { stroke: '#ffaa00' }
-                    });
-                }
-                return;
+    // 2) If no source containers with energy, use Storage
+    if (!target) {
+        target = creep.room.storage && creep.room.storage.store[RESOURCE_ENERGY] > 0
+            ? creep.room.storage
+            : null;
+    }
+
+    // 3) (Optional) fallback: dropped energy
+    if (!target) {
+        const dropped = creep.pos.findClosestByPath(FIND_DROPPED_RESOURCES, {
+            filter: r => r.resourceType === RESOURCE_ENERGY && r.amount > 50
+        });
+        if (dropped) {
+            if (creep.pickup(dropped) === ERR_NOT_IN_RANGE) {
+                creep.moveTo(dropped, {visualizePathStyle: {stroke: '#ffaa00'}});
             }
-
-            // 2) PRIORITY: dropped energy
-            const dropped = creep.pos.findClosestByPath(FIND_DROPPED_RESOURCES, {
-                filter: r =>
-                    r.resourceType === RESOURCE_ENERGY &&
-                    r.amount >= 10
-            });
-
-            if (dropped) {
-                if (creep.pickup(dropped) === ERR_NOT_IN_RANGE) {
-                    creep.moveTo(dropped, {
-                        visualizePathStyle: { stroke: '#ffaa00' }
-                    });
-                }
-                return;
-            }
-
-            // 3) NEXT: storage as a fallback source
-            const storage = creep.room.storage;
-            if (storage && storage.store[RESOURCE_ENERGY] > 0) {
-                if (creep.withdraw(storage, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
-                    creep.moveTo(storage, {
-                        visualizePathStyle: { stroke: '#ffaa00' }
-                    });
-                }
-                return;
-            }
-
-            // 4) If nothing to grab, idle near spawn
-            const spawn = creep.room.find(FIND_MY_SPAWNS)[0];
-            if (spawn) {
-                creep.moveTo(spawn, {
-                    visualizePathStyle: { stroke: '#ffaa00' },
-                    range: 3
-                });
-            }
-            return;
         }
+        return;
+    }
+
+    if (target.structureType) {
+        if (creep.withdraw(target, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
+            creep.moveTo(target, {visualizePathStyle: {stroke: '#ffffff'}});
+        }
+    }
+    return;
+}
+
 
         // ========= HAUL / USE MODE =========
         if (creep.memory.hauling) {
