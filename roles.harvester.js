@@ -1,8 +1,5 @@
 module.exports = {
     run: function (creep) {
-        
-        module.exports = {
-    run: function (creep) {
 
         const storage = creep.room.storage;
 
@@ -28,12 +25,34 @@ module.exports = {
                 return;
             }
 
-        
-        
-        
-        
-        if(!storage){
-            // Toggle harvesting / delivering states
+            // WORKING → Fill spawn/extensions/towers
+            let target = creep.pos.findClosestByPath(FIND_MY_STRUCTURES, {
+                filter: s =>
+                    (s.structureType === STRUCTURE_SPAWN ||
+                     s.structureType === STRUCTURE_EXTENSION ||
+                     s.structureType === STRUCTURE_TOWER) &&
+                    s.store.getFreeCapacity(RESOURCE_ENERGY) > 0
+            });
+
+            // Nothing needs energy? Idle near storage
+            if (!target) {
+                creep.moveTo(storage, { visualizePathStyle: { stroke: '#ffffff' } });
+                return;
+            }
+
+            if (creep.transfer(target, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
+                creep.moveTo(target, { visualizePathStyle: { stroke: '#ffffff' } });
+            }
+
+            return; // <--- VERY IMPORTANT
+        }
+
+        // =====================================================
+        // NORMAL MODE (no Storage built yet)
+        // Your original harvester logic unchanged below
+        // =====================================================
+
+        // Toggle harvesting / delivering states
         if (creep.memory.harvesting && creep.store.getFreeCapacity() === 0) {
             creep.memory.harvesting = false; // now go deliver
         }
