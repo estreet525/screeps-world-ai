@@ -42,16 +42,12 @@ module.exports = {
 
         // === 2. No hostiles: idle near something important ===
         // Prefer a tower, then spawn, then controller
-        let anchor =
-            creep.pos.findClosestByRange(FIND_MY_STRUCTURES, {
-                filter: s => s.structureType === STRUCTURE_TOWER
-            }) ||
-            creep.pos.findClosestByRange(FIND_MY_SPAWNS) ||
-            creep.room.controller;
+        // === 2. No hostiles: idle near the controller (away from traffic) ===
+        const anchor = creep.room.controller;
 
         if (anchor) {
-            // Hang out within 3 tiles of the anchor
-            if (!creep.pos.inRangeTo(anchor, 3)) {
+            // Hang out within 3–4 tiles of the controller
+            if (!creep.pos.inRangeTo(anchor, 4)) {
                 creep.moveTo(anchor, {
                     reusePath: 10,
                     visualizePathStyle: { stroke: '#00ffff' }
