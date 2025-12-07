@@ -1,5 +1,4 @@
 const config = require('config');
-const creepCounts = config.getCreepCounts(spawn.room);
 
 module.exports = {
     run: function (spawn) {
