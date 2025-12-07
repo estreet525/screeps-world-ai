@@ -75,6 +75,15 @@ var BODY_OPTIONS = {
         [WORK, WORK, CARRY, CARRY, MOVE, MOVE],              // 400
         // Small
         [WORK, CARRY, CARRY, MOVE]                           // 250
+    ],
+
+    rangedDefender: [
+        // Large (for when your energy income is comfy)
+        [TOUGH, TOUGH, TOUGH, MOVE, MOVE, MOVE, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK],  // 630
+        // Medium
+        [TOUGH, TOUGH, MOVE, MOVE, MOVE, RANGED_ATTACK, RANGED_ATTACK], // 470
+        // Small
+        [TOUGH, MOVE, RANGED_ATTACK, MOVE] // 260
     ]
 
     
@@ -101,17 +110,35 @@ function getBodyForRole(role, room) {
     return options[options.length - 1] || DEFAULT_BODY;
 }
 
-module.exports = {
-    // Target creep counts by role (tune as you like)
-    creepCounts: {
-        harvester: 0,   // only emergency via the spawn logic
+// 🔹 New: RCL-aware creep counts
+function getCreepCounts(room) {
+    const rcl = room.controller ? room.controller.level : 0;
+
+    // Base economy (you can tweak this as you like)
+    const counts = {
+        harvester: 0,   // only emergency via spawn logic
         miner: 2,
-        hauler: 4, // drop to two on new run
+        hauler: 4,      // you mentioned maybe dropping this to 2 on a new run later
         upgrader: 1,
         builder: 2,
-        repairer: 1
-    },
+        repairer: 1,
+        rangedDefender: 0 // default off until RCL 3+
+    };
 
-    bodyCost: bodyCost,
-    getBodyForRole: getBodyForRole
+    // Defenders kick in by RCL
+    if (rcl >= 5) {
+        counts.rangedDefender = 3;
+    } else if (rcl >= 4) {
+        counts.rangedDefender = 2;
+    } else if (rcl >= 3) {
+        counts.rangedDefender = 1;
+    }
+
+    return counts;
+}
+
+module.exports = {
+    getCreepCounts,
+    bodyCost,
+    getBodyForRole
 };

@@ -1,4 +1,5 @@
 const config = require('config');
+const creepCounts = config.getCreepCounts(spawn.room);
 
 module.exports = {
     run: function (spawn) {
@@ -6,7 +7,7 @@ module.exports = {
             return c.memory.role;
         });
 
-        const desired = config.creepCounts;
+        const desired = config.getCreepCounts(spawn.room);
 
         // 🆘 Emergency: if all creeps are dead, force a basic harvester
         if (Object.keys(Game.creeps).length === 0) {
