@@ -58,7 +58,7 @@ function chooseRepairTarget(room) {
         filter: s =>
             (s.structureType === STRUCTURE_ROAD ||
              s.structureType === STRUCTURE_CONTAINER) &&
-            s.hits < s.hitsMax * 0.5
+            s.hits < s.hitsMax * 0.25
     });
 
     if (targets.length) {
