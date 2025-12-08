@@ -1,12 +1,31 @@
 // roles.hauler.js
 
 function findControllerContainer(room) {
-    if (!room.controller) return null;
-    return room.find(FIND_STRUCTURES, {
-        filter: s =>
-            s.structureType === STRUCTURE_CONTAINER &&
-            s.pos.inRangeTo(room.controller, 3)
-    })[0] || null;
+    const controller = room.controller;
+    if (!controller) return null;
+
+    const containers = room.find(FIND_STRUCTURES, {
+        filter: s => s.structureType === STRUCTURE_CONTAINER
+    });
+
+    if (containers.length === 0) return null;
+
+    // Pick the container closest to the controller as the "RC container"
+    let best = null;
+    let bestRange = Infinity;
+
+    for (const c of containers) {
+        const range = controller.pos.getRangeTo(c);
+        if (range < bestRange) {
+            bestRange = range;
+            best = c;
+        }
+    }
+
+    // Optional: if you want to enforce "near-ish" to controller, uncomment this:
+    // if (bestRange > 6) return null;
+
+    return best;
 }
 
 module.exports = {
@@ -51,10 +70,11 @@ module.exports = {
 
             if (source) {
                 let result;
-
                 if (source.resourceType === RESOURCE_ENERGY) {
+                    // dropped
                     result = creep.pickup(source);
                 } else {
+                    // structure
                     result = creep.withdraw(source, RESOURCE_ENERGY);
                 }
 
@@ -96,13 +116,12 @@ module.exports = {
             target = creep.pos.findClosestByRange(targets);
         }
 
-        // 2) Towers (but only if they aren’t basically full)
+        // 2) Towers (only if they truly need energy)
         if (!target) {
             targets = room.find(FIND_MY_STRUCTURES, {
                 filter: s =>
                     s.structureType === STRUCTURE_TOWER &&
-                    s.store.getFreeCapacity(RESOURCE_ENERGY) > 0 &&
-                    s.store[RESOURCE_ENERGY] < 800   // tweak threshold as you like
+                    s.store.getFreeCapacity(RESOURCE_ENERGY) > 0
             });
             if (targets.length > 0) {
                 target = creep.pos.findClosestByRange(targets);
@@ -115,7 +134,7 @@ module.exports = {
             target = controllerContainer;
         }
 
-        // 4) Fallback: storage (in case they’re carrying and nothing “needs” it)
+        // 4) Fallback: storage (in case they’re carrying and nothing "needs" it)
         if (!target && storage) {
             target = storage;
         }
