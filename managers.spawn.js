@@ -2,9 +2,9 @@ const config = require('config');
 
 module.exports = {
     run: function (spawn) {
-        const counts = _.countBy(Game.creeps, function (c) {
-            return c.memory.role;
-        });
+        const roomCreeps = _.filter(Game.creeps, c => c.memory.homeRoom === spawn.room.name);
+        const counts = _.countBy(roomCreeps, c => c.memory.role);
+
 
         const desired = config.getCreepCounts(spawn.room);
 
