@@ -3,8 +3,19 @@
 module.exports = {
     run: function (creep) {
 
-        const storage = creep.room.storage;
+        const room = creep.room;
+        const storage = room.storage;
         const hasStorageEnergy = storage && storage.store[RESOURCE_ENERGY] > 0;
+
+        // Try to find a controller container (container close to controller)
+        let controllerContainer = null;
+        if (room.controller) {
+            controllerContainer = room.find(FIND_STRUCTURES, {
+                filter: s =>
+                    s.structureType === STRUCTURE_CONTAINER &&
+                    s.pos.inRangeTo(room.controller, 3)
+            })[0];
+        }
 
         // ========== STATE MACHINE ==========
         if (creep.memory.hauling && creep.store[RESOURCE_ENERGY] === 0) {
@@ -14,13 +25,13 @@ module.exports = {
             creep.memory.hauling = true;
         }
 
-        // ==========================================
-        // MODE 1: Dedicated Storage ⇢ Spawn/Econ Hauler
-        // ==========================================
+        // ==========================
+        //  MODE A: Storage available
+        // ==========================
         if (hasStorageEnergy) {
 
+            // --- A1: NOT hauling → withdraw from storage ---
             if (!creep.memory.hauling) {
-                // NOT HAULING → withdraw from Storage
                 if (creep.withdraw(storage, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
                     creep.moveTo(storage, {
                         reusePath: 5,
@@ -30,32 +41,48 @@ module.exports = {
                 return;
             }
 
-            // HAULING → deliver to spawn/extensions/towers/etc.
-            // 1) Spawn + extensions
-            let target = creep.pos.findClosestByRange(FIND_MY_STRUCTURES, {
+            // --- A2: HAULING → deliver in priority order ---
+            // 1) Any spawn/extension with free energy capacity
+            let targets = room.find(FIND_MY_STRUCTURES, {
                 filter: s =>
                     (s.structureType === STRUCTURE_SPAWN ||
                      s.structureType === STRUCTURE_EXTENSION) &&
                     s.energy < s.energyCapacity
             });
 
-            // 2) Towers (optional: only if below, say, 600)
+            let target = null;
+
+            if (targets.length > 0) {
+                // Pick the closest one; this ensures ALL extensions are considered
+                target = creep.pos.findClosestByRange(targets);
+            }
+
+            // 2) Towers
             if (!target) {
-                target = creep.pos.findClosestByRange(FIND_MY_STRUCTURES, {
+                targets = room.find(FIND_MY_STRUCTURES, {
                     filter: s =>
                         s.structureType === STRUCTURE_TOWER &&
                         s.store.getFreeCapacity(RESOURCE_ENERGY) > 0
                 });
+                if (targets.length > 0) {
+                    target = creep.pos.findClosestByRange(targets);
+                }
             }
 
-            // 3) If no immediate consumer, top storage back up or feed controller container if you use one
+            // 3) Controller container (so upgrader can be lazy like it should be)
+            if (!target && controllerContainer &&
+                controllerContainer.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
+                target = controllerContainer;
+            }
+
+            // 4) Fallback: put it back into storage
             if (!target) {
-                // Just return to storage (or you can send to controller container if you have one)
                 target = storage;
             }
 
             if (target) {
-                if (creep.transfer(target, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
+                const result = creep.transfer(target, RESOURCE_ENERGY);
+                if (result === ERR_NOT_IN_RANGE) {
                     creep.moveTo(target, {
                         reusePath: 5,
                         visualizePathStyle: { stroke: '#ffffff' }
@@ -66,12 +93,12 @@ module.exports = {
             return;
         }
 
-        // ==========================================
-        // MODE 2: No (or empty) Storage → old behavior
-        // ==========================================
+        // ==============================
+        //  MODE B: No/empty storage yet
+        // ==============================
 
         if (!creep.memory.hauling) {
-            // Find containers (or dropped) near sources
+            // Pull from containers first
             let container = creep.pos.findClosestByRange(FIND_STRUCTURES, {
                 filter: s =>
                     s.structureType === STRUCTURE_CONTAINER &&
@@ -88,7 +115,7 @@ module.exports = {
                 return;
             }
 
-            // Optional: pick up dropped energy as last resort
+            // Optional: pick up dropped energy
             const dropped = creep.pos.findClosestByRange(FIND_DROPPED_RESOURCES, {
                 filter: r => r.resourceType === RESOURCE_ENERGY
             });
@@ -102,8 +129,8 @@ module.exports = {
                 return;
             }
 
-            // If absolutely nothing to grab, just idle near storage or spawn
-            const idleTarget = storage || creep.room.find(FIND_MY_SPAWNS)[0];
+            // Nothing to do, idle near storage or spawn
+            const idleTarget = storage || room.find(FIND_MY_SPAWNS)[0];
             if (idleTarget && !creep.pos.inRangeTo(idleTarget, 3)) {
                 creep.moveTo(idleTarget, {
                     reusePath: 10,
@@ -113,20 +140,33 @@ module.exports = {
             return;
         }
 
-        // HAULING in Mode 2 → same delivery priorities
-        let target = creep.pos.findClosestByRange(FIND_MY_STRUCTURES, {
+        // B2: HAULING in “no storage energy” mode → same priority
+        let targets = room.find(FIND_MY_STRUCTURES, {
             filter: s =>
                 (s.structureType === STRUCTURE_SPAWN ||
                  s.structureType === STRUCTURE_EXTENSION) &&
                 s.energy < s.energyCapacity
         });
 
+        let target = null;
+        if (targets.length > 0) {
+            target = creep.pos.findClosestByRange(targets);
+        }
+
         if (!target) {
-            target = creep.pos.findClosestByRange(FIND_MY_STRUCTURES, {
+            targets = room.find(FIND_MY_STRUCTURES, {
                 filter: s =>
                     s.structureType === STRUCTURE_TOWER &&
                     s.store.getFreeCapacity(RESOURCE_ENERGY) > 0
             });
+            if (targets.length > 0) {
+                target = creep.pos.findClosestByRange(targets);
+            }
+        }
+
+        if (!target && controllerContainer &&
+            controllerContainer.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
+            target = controllerContainer;
         }
 
         if (!target && storage) {
@@ -134,7 +174,8 @@ module.exports = {
         }
 
         if (target) {
-            if (creep.transfer(target, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
+            const result = creep.transfer(target, RESOURCE_ENERGY);
+            if (result === ERR_NOT_IN_RANGE) {
                 creep.moveTo(target, {
                     reusePath: 5,
                     visualizePathStyle: { stroke: '#ffffff' }
