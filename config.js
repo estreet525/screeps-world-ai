@@ -135,7 +135,7 @@ function getCreepCounts(room) {
     const counts = {
         harvester: 0,   // only emergency via spawn logic
         miner: 2,
-        hauler: 4,      // you mentioned maybe dropping this to 2 on a new run later
+        hauler: 3,      // you mentioned maybe dropping this to 2 on a new run later
         upgrader: 1,
         builder: 2,
         repairer: 1,
