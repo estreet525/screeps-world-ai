@@ -116,22 +116,22 @@ module.exports = {
             target = creep.pos.findClosestByRange(targets);
         }
 
-        // 2) Towers (only if they truly need energy)
+        // 2) Controller container for upgrader
+        if (!target && controllerContainer &&
+            controllerContainer.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
+            target = controllerContainer;
+        }
+
+        // 3) Towers (ONLY if they are actually low)
         if (!target) {
             targets = room.find(FIND_MY_STRUCTURES, {
                 filter: s =>
                     s.structureType === STRUCTURE_TOWER &&
-                    s.store.getFreeCapacity(RESOURCE_ENERGY) > 0
+                    s.store[RESOURCE_ENERGY] < 600 // <-- THRESHOLD
             });
             if (targets.length > 0) {
                 target = creep.pos.findClosestByRange(targets);
             }
-        }
-
-        // 3) Controller container for upgrader
-        if (!target && controllerContainer &&
-            controllerContainer.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
-            target = controllerContainer;
         }
 
         // 4) Fallback: storage (in case they’re carrying and nothing "needs" it)
@@ -141,11 +141,18 @@ module.exports = {
 
         if (target) {
             const result = creep.transfer(target, RESOURCE_ENERGY);
+
             if (result === ERR_NOT_IN_RANGE) {
                 creep.moveTo(target, {
                     reusePath: 5,
                     visualizePathStyle: { stroke: '#ffffff' }
                 });
+            }
+
+            // If we tried to fill and it's already full, dump hauling state
+            // so we re-evaluate targets next tick instead of hovering.
+            if (result === ERR_FULL) {
+                creep.memory.hauling = false;
             }
         } else {
             // Nowhere to deliver → idle
