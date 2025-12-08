@@ -84,6 +84,17 @@ var BODY_OPTIONS = {
         [TOUGH, TOUGH, MOVE, MOVE, MOVE, RANGED_ATTACK, RANGED_ATTACK], // 470
         // Small
         [TOUGH, MOVE, RANGED_ATTACK, MOVE] // 260
+    ],
+
+    claimer: [
+        // Claim parts are expensive and decay quickly
+        [CLAIM, MOVE, MOVE]
+    ],
+
+    pioneer: [
+        // Early pioneers
+        [WORK, WORK, CARRY, CARRY, MOVE, MOVE]
+
     ]
 
     

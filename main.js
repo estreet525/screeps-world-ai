@@ -6,6 +6,8 @@ const minerRole      = require('roles.miner');
 const haulerRole     = require('roles.hauler');
 const roleRepairer   = require('roles.repairer');
 const rolerangedDefender = require('roles.rangedDefender');
+const claimerRole = require('roles.claimer');
+const pioneerRole = require('roles.pioneer');
 const containersManager = require('managers.containers');
 const roadsManager   = require('managers.roads');
 const extensionsManager = require('managers.extensions');
@@ -21,7 +23,9 @@ const roleMap = {
     miner: minerRole,
     hauler: haulerRole,
     repairer: roleRepairer,
-    rangedDefender: rolerangedDefender
+    rangedDefender: rolerangedDefender,
+    claimer: claimerRole,
+    pioneer: pioneerRole
 };
 
 module.exports.loop = function () {
