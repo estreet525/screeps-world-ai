@@ -44,6 +44,31 @@ module.exports = {
                 return;
             }
 
+            if (role === 'hauler') {
+                const existingHaulers = _.filter(Game.creeps, c => c.memory.role === 'hauler');
+
+                // Default job
+                let job = 'general';
+
+                const jobOrder = ['extensions', 'towers', 'controller', 'sources'];
+
+             if (existingHaulers.length >= 3) {
+                    // Try to assign one of each specialized job first
+                    const usedJobs = existingHaulers.map(c => c.memory.job);
+
+                    const unused = jobOrder.find(j => !usedJobs.includes(j));
+
+                    if (unused) {
+                        job = unused;
+                    } else {
+                        // If all 4 are already in use, keep this one "general"
+                        job = 'general';
+                    }
+                }
+
+    
+            }
+
             const name = role + '-' + Game.time;
             const result = spawn.spawnCreep(body, name, {
                 memory: { role: role }
