@@ -9,132 +9,12 @@ function findControllerContainer(room) {
     })[0] || null;
 }
 
-function getEnergySource(creep, job) {
-    const room = creep.room;
-    const storage = room.storage;
-
-    // Jobs that should *prefer storage* as source when available
-    const prefersStorage = (job === 'extensions' || job === 'towers' || job === 'controller' || job === 'general');
-
-    if (prefersStorage && storage && storage.store[RESOURCE_ENERGY] > 0) {
-        return storage;
-    }
-
-    // “sources” job: explicitly pull from containers/dropped energy near miners
-    let container = room.find(FIND_STRUCTURES, {
-        filter: s =>
-            s.structureType === STRUCTURE_CONTAINER &&
-            s.store[RESOURCE_ENERGY] > 0
-    })[0];
-
-    if (container) return container;
-
-    const dropped = room.find(FIND_DROPPED_RESOURCES, {
-        filter: r => r.resourceType === RESOURCE_ENERGY
-    })[0];
-
-    if (dropped) return dropped;
-
-    // Fallback: storage if any (even if job didn’t *prefer* it)
-    if (storage && storage.store[RESOURCE_ENERGY] > 0) {
-        return storage;
-    }
-
-    return null;
-}
-
-function getDeliveryTarget(creep, job) {
-    const room = creep.room;
-    const storage = room.storage;
-    const controllerContainer = findControllerContainer(room);
-
-    const findClosest = (filterFn) => {
-        const targets = room.find(FIND_MY_STRUCTURES, { filter: filterFn });
-        if (targets.length === 0) return null;
-        return creep.pos.findClosestByRange(targets);
-    };
-
-    if (job === 'extensions') {
-        // 1) Spawn + extensions
-        let target = findClosest(s =>
-            (s.structureType === STRUCTURE_SPAWN ||
-             s.structureType === STRUCTURE_EXTENSION) &&
-            s.energy < s.energyCapacity
-        );
-        if (target) return target;
-
-        // 2) Fallback: storage
-        return storage || null;
-    }
-
-    if (job === 'towers') {
-        // 1) Towers (top priority for this job)
-        let target = findClosest(s =>
-            s.structureType === STRUCTURE_TOWER &&
-            s.store.getFreeCapacity(RESOURCE_ENERGY) > 0
-        );
-        if (target) return target;
-
-        // 2) Spawn + extensions
-        target = findClosest(s =>
-            (s.structureType === STRUCTURE_SPAWN ||
-             s.structureType === STRUCTURE_EXTENSION) &&
-            s.energy < s.energyCapacity
-        );
-        if (target) return target;
-
-        // 3) Fallback: storage
-        return storage || null;
-    }
-
-    if (job === 'controller') {
-        // 1) RC container if it exists and has room
-        if (controllerContainer &&
-            controllerContainer.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
-            return controllerContainer;
-        }
-
-        // 2) Fallback: storage
-        return storage || null;
-    }
-
-    if (job === 'sources') {
-        // Bring stuff from sources → storage
-        if (storage) return storage;
-        return null;
-    }
-
-    // === GENERAL JOB (fallback) ===
-    // 1) Spawn + extensions
-    let target = findClosest(s =>
-        (s.structureType === STRUCTURE_SPAWN ||
-         s.structureType === STRUCTURE_EXTENSION) &&
-        s.energy < s.energyCapacity
-    );
-    if (target) return target;
-
-    // 2) Towers
-    target = findClosest(s =>
-        s.structureType === STRUCTURE_TOWER &&
-        s.store.getFreeCapacity(RESOURCE_ENERGY) > 0
-    );
-    if (target) return target;
-
-    // 3) RC container
-    if (controllerContainer &&
-        controllerContainer.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
-        return controllerContainer;
-    }
-
-    // 4) Fallback: storage
-    return storage || null;
-}
-
 module.exports = {
     run: function (creep) {
 
-        const job = creep.memory.job || 'general';
         const room = creep.room;
+        const storage = room.storage;
+        const controllerContainer = findControllerContainer(room);
 
         // === STATE MACHINE ===
         if (creep.memory.hauling && creep.store[RESOURCE_ENERGY] === 0) {
@@ -146,14 +26,35 @@ module.exports = {
 
         // === NOT HAULING → GET ENERGY ===
         if (!creep.memory.hauling) {
-            const source = getEnergySource(creep, job);
+            let source = null;
+
+            // 1) Prefer storage if it has energy
+            if (storage && storage.store[RESOURCE_ENERGY] > 0) {
+                source = storage;
+            }
+
+            // 2) Otherwise containers with energy
+            if (!source) {
+                source = creep.pos.findClosestByRange(FIND_STRUCTURES, {
+                    filter: s =>
+                        s.structureType === STRUCTURE_CONTAINER &&
+                        s.store[RESOURCE_ENERGY] > 0
+                });
+            }
+
+            // 3) Otherwise dropped energy
+            if (!source) {
+                source = creep.pos.findClosestByRange(FIND_DROPPED_RESOURCES, {
+                    filter: r => r.resourceType === RESOURCE_ENERGY
+                });
+            }
+
             if (source) {
                 let result;
+
                 if (source.resourceType === RESOURCE_ENERGY) {
-                    // dropped
                     result = creep.pickup(source);
                 } else {
-                    // structure
                     result = creep.withdraw(source, RESOURCE_ENERGY);
                 }
 
@@ -166,7 +67,7 @@ module.exports = {
             } else {
                 // Nothing to grab → idle near storage or spawn
                 const idle =
-                    room.storage ||
+                    storage ||
                     room.find(FIND_MY_SPAWNS)[0];
                 if (idle && !creep.pos.inRangeTo(idle, 3)) {
                     creep.moveTo(idle, {
@@ -175,11 +76,50 @@ module.exports = {
                     });
                 }
             }
+
             return;
         }
 
         // === HAULING → DELIVER ENERGY ===
-        const target = getDeliveryTarget(creep, job);
+
+        let target = null;
+
+        // 1) Spawn + extensions first
+        let targets = room.find(FIND_MY_STRUCTURES, {
+            filter: s =>
+                (s.structureType === STRUCTURE_SPAWN ||
+                 s.structureType === STRUCTURE_EXTENSION) &&
+                s.energy < s.energyCapacity
+        });
+
+        if (targets.length > 0) {
+            target = creep.pos.findClosestByRange(targets);
+        }
+
+        // 2) Towers (but only if they aren’t basically full)
+        if (!target) {
+            targets = room.find(FIND_MY_STRUCTURES, {
+                filter: s =>
+                    s.structureType === STRUCTURE_TOWER &&
+                    s.store.getFreeCapacity(RESOURCE_ENERGY) > 0 &&
+                    s.store[RESOURCE_ENERGY] < 800   // tweak threshold as you like
+            });
+            if (targets.length > 0) {
+                target = creep.pos.findClosestByRange(targets);
+            }
+        }
+
+        // 3) Controller container for upgrader
+        if (!target && controllerContainer &&
+            controllerContainer.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
+            target = controllerContainer;
+        }
+
+        // 4) Fallback: storage (in case they’re carrying and nothing “needs” it)
+        if (!target && storage) {
+            target = storage;
+        }
+
         if (target) {
             const result = creep.transfer(target, RESOURCE_ENERGY);
             if (result === ERR_NOT_IN_RANGE) {
@@ -191,7 +131,7 @@ module.exports = {
         } else {
             // Nowhere to deliver → idle
             const idle =
-                room.storage ||
+                storage ||
                 room.find(FIND_MY_SPAWNS)[0];
             if (idle && !creep.pos.inRangeTo(idle, 3)) {
                 creep.moveTo(idle, {
