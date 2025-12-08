@@ -71,7 +71,7 @@ module.exports = {
 
             const name = role + '-' + Game.time;
             const result = spawn.spawnCreep(body, name, {
-                memory: { role: role }
+                memory: { role: role, homeRoom: spawn.room.name }
             });
 
             if (result === OK) {
