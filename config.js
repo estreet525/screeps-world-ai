@@ -129,6 +129,7 @@ function getBodyForRole(role, room) {
 // 🔹 New: RCL-aware creep counts
 function getCreepCounts(room) {
     const rcl = room.controller ? room.controller.level : 0;
+    const hasStorage = room.storage ? true : false;
 
     // Base economy (you can tweak this as you like)
     const counts = {
