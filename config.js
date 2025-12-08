@@ -95,6 +95,11 @@ var BODY_OPTIONS = {
         // Early pioneers
         [WORK, WORK, CARRY, CARRY, MOVE, MOVE]
 
+    ],
+
+    storageTopper: [
+        // Fast and Strong
+        [CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE] // 600
     ]
 
     
@@ -133,8 +138,14 @@ function getCreepCounts(room) {
         upgrader: 1,
         builder: 2,
         repairer: 1,
+        storageTopper: 0,
         rangedDefender: 0 // default off until RCL 3+
     };
+
+    // Only start using a storageTopper once we have storage
+    if (hasStorage && rcl >= 4) {
+        counts.storageTopper = 1;
+    }
 
     // Defenders kick in by RCL
     if (rcl >= 5) {
