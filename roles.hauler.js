@@ -31,6 +31,13 @@ function findControllerContainer(room) {
 module.exports = {
     run: function (creep) {
 
+        // === TRAVEL TO TARGET ROOM FIRST ===
+        if (creep.memory.targetRoom && creep.room.name !== creep.memory.targetRoom) {
+            const targetPos = new RoomPosition(25, 25, creep.memory.targetRoom);
+            creep.moveTo(targetPos, { visualizePathStyle: { stroke: '#ffaa00' } });
+            return; // <-- VERY IMPORTANT so no other logic runs yet
+        }
+        
         const room = creep.room;
         const storage = room.storage;
         const controllerContainer = findControllerContainer(room);
