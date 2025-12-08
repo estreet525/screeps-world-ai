@@ -26,6 +26,7 @@ module.exports = {
         const spawn = spawns[0];
         const controller = room.controller;
         const sources = room.find(FIND_SOURCES);
+        const storage = room.storage; // <--- we'll use this below
 
         // Helper: plan a road from A to B
         const planRoad = (fromPos, toPos) => {
@@ -85,6 +86,22 @@ module.exports = {
 
             // controller <-> source/container
             planRoad(controller.pos, targetPos);
+        }
+
+        // 3) Road from controller container to storage (hauler highway)
+        if (storage) {
+            // Look for the controller container within a small radius of the controller
+            const controllerContainers = controller.pos.findInRange(FIND_STRUCTURES, 3, {
+                filter: s => s.structureType === STRUCTURE_CONTAINER
+            });
+
+            if (controllerContainers.length > 0) {
+                // Prefer the actual controller container as endpoint
+                planRoad(storage.pos, controllerContainers[0].pos);
+            } else {
+                // Fallback: at least get a road from storage to controller
+                planRoad(storage.pos, controller.pos);
+            }
         }
     }
 };
