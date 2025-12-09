@@ -58,7 +58,7 @@ function findContainerSpotForController(room) {
     const terrain = room.getTerrain();
 
     // Prefer range 1 around controller, then range 2
-    const ranges = [1, 2];
+    const ranges = [1, 3];
 
     for (const range of ranges) {
         for (let dx = -range; dx <= range; dx++) {
