@@ -51,61 +51,26 @@ module.exports = {
         }
 
         // === NOT HAULING → GET ENERGY ===
+        const energy = require('utils.energy');
+
         if (!creep.memory.hauling) {
-            let source = null;
+            const target = energy.getBalancedEnergyTarget(creep);
+            if (!target) return;
 
-            // 1) Prefer storage if it has energy
-            if (storage && storage.store[RESOURCE_ENERGY] > 0) {
-                source = storage;
-            }
-
-            // 2) Otherwise containers with energy
-            if (!source) {
-                source = creep.pos.findClosestByRange(FIND_STRUCTURES, {
-                    filter: s =>
-                        s.structureType === STRUCTURE_CONTAINER &&
-                        s.store[RESOURCE_ENERGY] > 0
-                });
-            }
-
-            // 3) Otherwise dropped energy
-            if (!source) {
-                source = creep.pos.findClosestByRange(FIND_DROPPED_RESOURCES, {
-                    filter: r => r.resourceType === RESOURCE_ENERGY
-                });
-            }
-
-            if (source) {
-                let result;
-                if (source.resourceType === RESOURCE_ENERGY) {
-                    // dropped
-                    result = creep.pickup(source);
-                } else {
-                    // structure
-                    result = creep.withdraw(source, RESOURCE_ENERGY);
-                }
-
-                if (result === ERR_NOT_IN_RANGE) {
-                    creep.moveTo(source, {
-                        reusePath: 5,
-                        visualizePathStyle: { stroke: '#ffaa00' }
-                    });
+            if (target.amount) {
+                // dropped pile
+                if (creep.pickup(target) === ERR_NOT_IN_RANGE) {
+                    creep.moveTo(target);
                 }
             } else {
-                // Nothing to grab → idle near storage or spawn
-                const idle =
-                    storage ||
-                    room.find(FIND_MY_SPAWNS)[0];
-                if (idle && !creep.pos.inRangeTo(idle, 3)) {
-                    creep.moveTo(idle, {
-                        reusePath: 10,
-                        visualizePathStyle: { stroke: '#6666ff' }
-                    });
+            // container
+            if (creep.withdraw(target, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
+                creep.moveTo(target);
                 }
             }
-
             return;
         }
+
 
         // === HAULING → DELIVER ENERGY ===
 

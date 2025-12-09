@@ -1,3 +1,5 @@
+const energyUtils = require('utils.energy'); // NEW: use your shared energy helper
+
 module.exports = {
     run: function (creep) {
 
@@ -34,28 +36,51 @@ module.exports = {
         const storageIsFullOrMissing =
             !storage || storage.store.getFreeCapacity(RESOURCE_ENERGY) === 0;
 
-        // Helper: is this a "source container" (container by a source, not the controller container)?
-        function isSourceContainer(struct) {
-            if (struct.structureType !== STRUCTURE_CONTAINER) return false;
-            if (controllerContainer && struct.id === controllerContainer.id) return false;
+        // ========================
+        // HELPER: COLLECT ENERGY
+        // ========================
+        // 1) Prefer rich local drops (so we clean up decay-risk piles near miners)
+        // 2) Otherwise use the balanced target from utils.energy (containers / drops)
+        function collectEnergy(creep) {
+            // Local "rich" dropped energy (don’t run across the map for crumbs)
+            const richDrop = creep.pos.findClosestByRange(FIND_DROPPED_RESOURCES, {
+                filter: r =>
+                    r.resourceType === RESOURCE_ENERGY &&
+                    r.amount >= Math.min(100, creep.store.getFreeCapacity()) &&
+                    creep.pos.getRangeTo(r) <= 6
+            });
 
-            const sources = room.find(FIND_SOURCES);
-            return sources.some(src => src.pos.inRangeTo(struct.pos, 1));
-        }
+            if (richDrop) {
+                if (creep.pickup(richDrop) === ERR_NOT_IN_RANGE) {
+                    creep.moveTo(richDrop, {
+                        visualizePathStyle: { stroke: '#ffaa00' },
+                        maxRooms: 1
+                    });
+                }
+                return true;
+            }
 
-        // Helper: is dropped energy near a miner or source (for "ground next to miners")
-        function isGoodDroppedEnergy(res) {
-            if (res.resourceType !== RESOURCE_ENERGY) return false;
+            // Balanced assignment across containers / (optionally) drops
+            const target = energyUtils.getBalancedEnergyTarget(creep);
+            if (!target) return false;
 
-            // Near a dedicated miner
-            const nearMiner = res.pos.findInRange(FIND_MY_CREEPS, 1, {
-                filter: c => c.memory.role === 'miner'
-            }).length > 0;
-
-            // Or near a source
-            const nearSource = res.pos.findInRange(FIND_SOURCES, 1).length > 0;
-
-            return nearMiner || nearSource;
+            // If target has `amount`, it's a dropped resource. Otherwise, assume a structure.
+            if (target.amount !== undefined) {
+                if (creep.pickup(target) === ERR_NOT_IN_RANGE) {
+                    creep.moveTo(target, {
+                        visualizePathStyle: { stroke: '#ffaa00' },
+                        maxRooms: 1
+                    });
+                }
+            } else {
+                if (creep.withdraw(target, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
+                    creep.moveTo(target, {
+                        visualizePathStyle: { stroke: '#ffaa00' },
+                        maxRooms: 1
+                    });
+                }
+            }
+            return true;
         }
 
         // =====================
@@ -68,14 +93,20 @@ module.exports = {
                 const site = creep.pos.findClosestByPath(FIND_CONSTRUCTION_SITES);
                 if (site) {
                     if (creep.build(site) === ERR_NOT_IN_RANGE) {
-                        creep.moveTo(site, { visualizePathStyle: { stroke: '#ffffff' }, maxRooms: 1 });
+                        creep.moveTo(site, {
+                            visualizePathStyle: { stroke: '#ffffff' },
+                            maxRooms: 1
+                        });
                     }
                     return;
                 }
 
                 // No site (edge case) -> upgrade
                 if (creep.upgradeController(room.controller) === ERR_NOT_IN_RANGE) {
-                    creep.moveTo(room.controller, { visualizePathStyle: { stroke: '#ffffff' }, maxRooms: 1 });
+                    creep.moveTo(room.controller, {
+                        visualizePathStyle: { stroke: '#ffffff' },
+                        maxRooms: 1
+                    });
                 }
                 return;
             }
@@ -86,7 +117,10 @@ module.exports = {
                 // Storage has room -> act as HAULER:
                 // deliver energy we are carrying to STORAGE
                 if (creep.transfer(storage, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
-                    creep.moveTo(storage, { visualizePathStyle: { stroke: '#ffffff' }, maxRooms: 1 });
+                    creep.moveTo(storage, {
+                        visualizePathStyle: { stroke: '#ffffff' },
+                        maxRooms: 1
+                    });
                 }
                 return;
             }
@@ -94,7 +128,10 @@ module.exports = {
             // Storage is full or missing -> act as HELPER UPGRADER
             if (room.controller) {
                 if (creep.upgradeController(room.controller) === ERR_NOT_IN_RANGE) {
-                    creep.moveTo(room.controller, { visualizePathStyle: { stroke: '#ffffff' }, maxRooms: 1 });
+                    creep.moveTo(room.controller, {
+                        visualizePathStyle: { stroke: '#ffffff' },
+                        maxRooms: 1
+                    });
                 }
             }
             return;
@@ -105,26 +142,16 @@ module.exports = {
         // ==========================
 
         if (hasConstruction) {
-            // Normal builder energy logic when there ARE construction sites:
-            const container = creep.pos.findClosestByPath(FIND_STRUCTURES, {
-                filter: s =>
-                    (s.structureType === STRUCTURE_CONTAINER ||
-                     s.structureType === STRUCTURE_STORAGE) &&
-                    s.store[RESOURCE_ENERGY] > 0
-            });
-
-            if (container) {
-                if (creep.withdraw(container, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
-                    creep.moveTo(container, { visualizePathStyle: { stroke: '#ffaa00' }, maxRooms: 1 });
-                }
-                return;
-            }
+            // Builders need energy to build: use our shared collection logic
+            if (collectEnergy(creep)) return;
 
             // Last resort: harvest from source
             const source = creep.pos.findClosestByPath(FIND_SOURCES);
             if (source) {
                 if (creep.harvest(source) === ERR_NOT_IN_RANGE) {
-                    creep.moveTo(source, { visualizePathStyle: { stroke: '#ffaa00' } });
+                    creep.moveTo(source, {
+                        visualizePathStyle: { stroke: '#ffaa00' }
+                    });
                 }
             }
             return;
@@ -133,36 +160,16 @@ module.exports = {
         // === NO CONSTRUCTION SITES ===
         if (!storageIsFullOrMissing) {
             // STORAGE HAS ROOM -> HAULING MODE
+            // Grab energy using the same logic (local drops → balanced containers)
+            if (collectEnergy(creep)) return;
 
-            // 1) Prefer dropped energy near miners/sources
-            const dropped = creep.pos.findClosestByPath(FIND_DROPPED_RESOURCES, {
-                filter: isGoodDroppedEnergy
-            });
-
-            if (dropped) {
-                if (creep.pickup(dropped) === ERR_NOT_IN_RANGE) {
-                    creep.moveTo(dropped, { visualizePathStyle: { stroke: '#ffaa00' }, maxRooms: 1 });
-                }
-                return;
-            }
-
-            // 2) Otherwise use SOURCE CONTAINERS (NOT controller container)
-            const sourceContainer = creep.pos.findClosestByPath(FIND_STRUCTURES, {
-                filter: s => isSourceContainer(s) && s.store[RESOURCE_ENERGY] > 0
-            });
-
-            if (sourceContainer) {
-                if (creep.withdraw(sourceContainer, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
-                    creep.moveTo(sourceContainer, { visualizePathStyle: { stroke: '#ffaa00' }, maxRooms: 1 });
-                }
-                return;
-            }
-
-            // 3) If no good container or drops, fall back to harvesting from source
+            // Fallback: harvest from source
             const source = creep.pos.findClosestByPath(FIND_SOURCES);
             if (source) {
                 if (creep.harvest(source) === ERR_NOT_IN_RANGE) {
-                    creep.moveTo(source, { visualizePathStyle: { stroke: '#ffaa00' }, maxRooms: 1 });
+                    creep.moveTo(source, {
+                        visualizePathStyle: { stroke: '#ffaa00' }
+                    });
                 }
             }
             return;
@@ -173,7 +180,10 @@ module.exports = {
 
         if (controllerContainer && controllerContainer.store[RESOURCE_ENERGY] > 0) {
             if (creep.withdraw(controllerContainer, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
-                creep.moveTo(controllerContainer, { visualizePathStyle: { stroke: '#ffaa00' }, maxRooms: 1 });
+                creep.moveTo(controllerContainer, {
+                    visualizePathStyle: { stroke: '#ffaa00' },
+                    maxRooms: 1
+                });
             }
             return;
         }
@@ -189,7 +199,10 @@ module.exports = {
 
         if (otherContainer) {
             if (creep.withdraw(otherContainer, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
-                creep.moveTo(otherContainer, { visualizePathStyle: { stroke: '#ffaa00' }, maxRooms: 1 });
+                creep.moveTo(otherContainer, {
+                    visualizePathStyle: { stroke: '#ffaa00' },
+                    maxRooms: 1
+                });
             }
             return;
         }
@@ -198,9 +211,10 @@ module.exports = {
         const source = creep.pos.findClosestByPath(FIND_SOURCES);
         if (source) {
             if (creep.harvest(source) === ERR_NOT_IN_RANGE) {
-                creep.moveTo(source, { visualizePathStyle: { stroke: '#ffaa00' }, maxRooms: 1 });
+                creep.moveTo(source, {
+                    visualizePathStyle: { stroke: '#ffaa00' }
+                });
             }
         }
     }
 };
-
