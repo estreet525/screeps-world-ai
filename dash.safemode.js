@@ -1,3 +1,8 @@
+// dash.safemode.js
+
+module.exports = {
+    run() {
+
 for (const roomName in Game.rooms) {
     const room = Game.rooms[roomName];
     if (!room.controller || !room.controller.my) continue;
@@ -24,4 +29,7 @@ for (const roomName in Game.rooms) {
             color: '#ffaaaa'
         });
     }
+}
+
+}
 }
