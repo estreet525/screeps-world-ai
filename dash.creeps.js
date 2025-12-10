@@ -29,12 +29,27 @@ function drawCreepDashboard() {
 
     const vis = new RoomVisual(targetRoom.name);
     const totalCreeps = Object.keys(Game.creeps).length;
+    // Haulers
     const totalHaulers = Object.values(Game.creeps)
     .filter(c => c.memory.role === 'hauler')
     .length;
+    // Miners
     const totalMiners = Object.values(Game.creeps)
     .filter(c => c.memory.role === 'miner')
     .length;
+    // Upgraders
+    const totalUpgraders = Object.values(Game.creeps)
+    .filter(c => c.memory.role === 'upgrader')
+    .length;
+    // Builders
+    const totalBuilders = Object.values(Game.creeps)
+    .filter(c => c.memory.role === 'builder')
+    .length;
+    // Repairers
+    const totalRepairers = Object.values(Game.creeps)
+    .filter(c => c.memory.role === 'repairer')
+    .length;
+
 
 
     const x = state.anchorX;
@@ -66,7 +81,19 @@ function drawCreepDashboard() {
     vis.text(`Miners: ${totalMiners}`, x, y + 2.6, {
         align: 'left',
         font: 0.8
-    })
+    });
+    vis.text(`Upgraders: ${totalUpgraders}`, x, y + 3.8, {
+        align: 'left',
+        font: 0.8
+    });
+    vis.text(`Builders: ${totalBuilders}`, x, y + 5.0, {
+        align: 'left',
+        font: 0.8
+    });
+    vis.text(`Repairers: ${totalRepairers}`, x, y + 6.2, {
+        align: 'left',
+        font: 0.8
+    });
 }
 
 module.exports = {
