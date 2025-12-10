@@ -28,6 +28,7 @@ function drawCreepDashboard() {
     if (!targetRoom) return;
 
     const vis = new RoomVisual(targetRoom.name);
+    // Total Creeps
     const totalCreeps = Object.keys(Game.creeps).length;
     // Haulers
     const totalHaulers = Object.values(Game.creeps)
@@ -56,7 +57,7 @@ function drawCreepDashboard() {
     const y = state.anchorY;
 
     // Background box
-    vis.rect(x - 0.3, y - 0.8, 13.7, 2.5, {
+    vis.rect(x - 0.3, y - 0.8, 9, 8.0, {
         fill: '#000000',
         opacity: 0.4,
         stroke: '#ffffff',
@@ -70,27 +71,27 @@ function drawCreepDashboard() {
     });
 
     // Main stat
-    vis.text(`Total creeps: ${totalCreeps}`, x, y + 0.4, {
+    vis.text(`Total creeps: ${totalCreeps}`, x, y + 0.8, {
         align: 'left',
         font: 0.8
     });
-    vis.text(`Haulers: ${totalHaulers}`, x, y + 1.6, {
+    vis.text(`Haulers: ${totalHaulers}`, x, y + 2.0, {
         align: 'left',
         font: 0.8
     });
-    vis.text(`Miners: ${totalMiners}`, x, y + 2.8, {
+    vis.text(`Miners: ${totalMiners}`, x, y + 3.2, {
         align: 'left',
         font: 0.8
     });
-    vis.text(`Upgraders: ${totalUpgraders}`, x, y + 4.0, {
+    vis.text(`Upgraders: ${totalUpgraders}`, x, y + 4.4, {
         align: 'left',
         font: 0.8
     });
-    vis.text(`Builders: ${totalBuilders}`, x, y + 5.2, {
+    vis.text(`Builders: ${totalBuilders}`, x, y + 5.6, {
         align: 'left',
         font: 0.8
     });
-    vis.text(`Repairers: ${totalRepairers}`, x, y + 6.4, {
+    vis.text(`Repairers: ${totalRepairers}`, x, y + 6.8, {
         align: 'left',
         font: 0.8
     });
