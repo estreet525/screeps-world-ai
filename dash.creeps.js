@@ -29,12 +29,16 @@ function drawCreepDashboard() {
 
     const vis = new RoomVisual(targetRoom.name);
     const totalCreeps = Object.keys(Game.creeps).length;
+    const totalHaulers = Object.values(Game.creeps)
+    .filter(c => c.memory.role === 'hauler')
+    .length;
+
 
     const x = state.anchorX;
     const y = state.anchorY;
 
     // Background box
-    vis.rect(x - 0.3, y - 0.8, 7, 1.6, {
+    vis.rect(x - 0.3, y - 0.8, 13.7, 2.5, {
         fill: '#000000',
         opacity: 0.4,
         stroke: '#ffffff',
@@ -48,11 +52,11 @@ function drawCreepDashboard() {
     });
 
     // Main stat
-    vis.text(`Total creeps: ${totalCreeps}`, x, y + 0.4, {
+    vis.text(`Total creeps: ${totalCreeps}`, x, y + 0.6, {
         align: 'left',
         font: 0.8
     });
-    vis.text("Testing another line in the dashboard", x, y + 0.4, {
+    vis.text(`Haulers: ${totalHaulers}`, x, y + 1.4, {
         align: 'left',
         font: 0.8
     })
