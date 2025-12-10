@@ -17,6 +17,7 @@ const towersManager = require('managers.towers');
 const rampartsManager = require('managers.ramparts');
 const pixelManager      = require('managers.pixel');
 const dashCreeps        = require('dash.creeps');
+const dashSafeMode      = require('dash.safemode');
 
 const roleMap = {
     harvester: harvesterRole,
@@ -53,6 +54,9 @@ module.exports.loop = function () {
 
     // 🆕 Draw the creeps dashboard (if enabled)
     dashCreeps.run();
+
+    // Safemode Dashboard
+    dashSafeMode.run();
 
     // Spawn logic
     for (const spawnName in Game.spawns) {
