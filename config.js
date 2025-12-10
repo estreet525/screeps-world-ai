@@ -1,5 +1,39 @@
 // config.js (module name: "config" in Screeps)
 
+// Default par for any room (fallback)
+const DEFAULT_CREEP_COUNTS = {
+    harvester: 0,   // only emergency via spawn logic
+    miner: 2,
+    hauler: 2,
+    upgrader: 3,
+    builder: 2,
+    repairer: 1,
+    storageTopper: 0,
+    rangedDefender: 0
+};
+
+// Per-room overrides (change these to your actual room names)
+const ROOM_CREEP_OVERRIDES = {
+    // First room (example: your main base)
+    "W24N8": {
+        miner: 2,
+        hauler: 3,
+        upgrader: 3,
+        builder: 2,
+        repairer: 1
+    },
+
+    // Second room (maybe more fragile / new)
+    "W25N8": {
+        miner: 1,
+        hauler: 2,
+        upgrader: 2,
+        builder: 1,
+        repairer: 0,
+        rangedDefender: 0
+    }
+};
+
 // Compute energy cost of a body, e.g. [WORK, CARRY, MOVE]
 function bodyCost(body) {
     var total = 0;
@@ -131,17 +165,15 @@ function getCreepCounts(room) {
     const rcl = room.controller ? room.controller.level : 0;
     const hasStorage = room.storage ? true : false;
 
-    // Base economy (you can tweak this as you like)
-    const counts = {
-        harvester: 0,   // only emergency via spawn logic
-        miner: 2,
-        hauler: 2,      // you mentioned maybe dropping this to 2 on a new run later
-        upgrader: 3,
-        builder: 2,
-        repairer: 1,
-        storageTopper: 0,
-        rangedDefender: 0 // default off until RCL 3+
-    };
+    // Start from the default template
+    const counts = {...DEFAULT_CREEP_COUNTS};
+
+    // Apply room-specific overrides if any
+    const roomOverrides = ROOM_CREEP_OVERRIDES[room.name];
+
+    if (roomOverrides) {
+        Object.assign(counts, roomOverrides);
+    }
 
     // Only start using a storageTopper once we have storage
     if (hasStorage && rcl >= 4) {
