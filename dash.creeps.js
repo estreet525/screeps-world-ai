@@ -32,6 +32,9 @@ function drawCreepDashboard() {
     const totalHaulers = Object.values(Game.creeps)
     .filter(c => c.memory.role === 'hauler')
     .length;
+    const totalMiners = Object.values(Game.creeps)
+    .filter(c => c.memory.role === 'miner')
+    .length;
 
 
     const x = state.anchorX;
@@ -57,6 +60,10 @@ function drawCreepDashboard() {
         font: 0.8
     });
     vis.text(`Haulers: ${totalHaulers}`, x, y + 1.4, {
+        align: 'left',
+        font: 0.8
+    });
+    vis.text(`Miners: ${totalMiners}`, x, y + 2.6, {
         align: 'left',
         font: 0.8
     })
