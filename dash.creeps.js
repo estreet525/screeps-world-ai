@@ -70,27 +70,27 @@ function drawCreepDashboard() {
     });
 
     // Main stat
-    vis.text(`Total creeps: ${totalCreeps}`, x, y + 0.6, {
+    vis.text(`Total creeps: ${totalCreeps}`, x, y + 0.4, {
         align: 'left',
         font: 0.8
     });
-    vis.text(`Haulers: ${totalHaulers}`, x, y + 1.4, {
+    vis.text(`Haulers: ${totalHaulers}`, x, y + 1.6, {
         align: 'left',
         font: 0.8
     });
-    vis.text(`Miners: ${totalMiners}`, x, y + 2.6, {
+    vis.text(`Miners: ${totalMiners}`, x, y + 2.8, {
         align: 'left',
         font: 0.8
     });
-    vis.text(`Upgraders: ${totalUpgraders}`, x, y + 3.8, {
+    vis.text(`Upgraders: ${totalUpgraders}`, x, y + 4.0, {
         align: 'left',
         font: 0.8
     });
-    vis.text(`Builders: ${totalBuilders}`, x, y + 5.0, {
+    vis.text(`Builders: ${totalBuilders}`, x, y + 5.2, {
         align: 'left',
         font: 0.8
     });
-    vis.text(`Repairers: ${totalRepairers}`, x, y + 6.2, {
+    vis.text(`Repairers: ${totalRepairers}`, x, y + 6.4, {
         align: 'left',
         font: 0.8
     });
