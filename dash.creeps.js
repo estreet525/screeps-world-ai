@@ -52,6 +52,10 @@ function drawCreepDashboard() {
         align: 'left',
         font: 0.8
     });
+    vis.text("Testing another line in the dashboard", x, y + 0.4, {
+        align: 'left',
+        font: 0.8
+    })
 }
 
 module.exports = {
