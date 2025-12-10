@@ -16,6 +16,7 @@ const storageManager = require('managers.storage');
 const towersManager = require('managers.towers');
 const rampartsManager = require('managers.ramparts');
 const pixelManager      = require('managers.pixel');
+const dashCreeps        = require('dash.creeps');
 
 const roleMap = {
     harvester: harvesterRole,
@@ -37,6 +38,21 @@ module.exports.loop = function () {
             delete Memory.creeps[name];
         }
     }
+
+    // 🆕 Expose console helpers every tick
+    global.dashCreepsToggle = function () {
+        const enabled = dashCreeps.toggle();
+        console.log(`[dash-creeps] ${enabled ? 'enabled' : 'disabled'}`);
+        return enabled;
+    };
+
+    // If you want to move it around without editing code later:
+    // global.dashCreepsSetAnchor = function (x, y) {
+    //     dashCreeps.setAnchor(x, y);
+    // };
+
+    // 🆕 Draw the creeps dashboard (if enabled)
+    dashCreeps.run();
 
     // Spawn logic
     for (const spawnName in Game.spawns) {
